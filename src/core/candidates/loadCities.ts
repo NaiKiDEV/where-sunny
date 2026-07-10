@@ -28,7 +28,7 @@ export function parseCityDataset(json: unknown): Place[] {
 }
 
 export async function fetchCities(
-  url = '/data/cities.json',
+  url = `${import.meta.env.BASE_URL}data/cities.json`,
   fetchImpl: typeof fetch = fetch,
 ): Promise<Place[]> {
   const res = await fetchImpl(url);

@@ -6,6 +6,8 @@ import { VitePWA } from 'vite-plugin-pwa';
 const THIRTY_DAYS_SECONDS = 60 * 60 * 24 * 30;
 
 export default defineConfig({
+  // Deployed as a GitHub Pages project site: https://naikidev.github.io/where-sunny/
+  base: '/where-sunny/',
   plugins: [
     react(),
     VitePWA({
