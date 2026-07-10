@@ -3,10 +3,13 @@ import { Drawer } from 'vaul';
 import type { ScoredPlace } from '../../core/types';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { useAppStore } from '../../state/store';
+import { FilterControls } from '../widgets/TopControls';
 import { PlaceDetail } from './PlaceDetail';
 import { ResultsList } from './ResultsList';
 
-const SNAP_POINTS = [0.24, 0.55, 0.93];
+// Top snap matches .drawer-content height (96%) so the sheet bottom lands exactly
+// on the viewport bottom when fully open — otherwise the last row clips off-screen.
+const SNAP_POINTS = [0.4, 0.7, 0.96];
 
 interface ResultsPanelProps {
   results: ScoredPlace[];
@@ -61,7 +64,24 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
       <Drawer.Portal>
         <Drawer.Content className="drawer-content" aria-describedby={undefined}>
           <Drawer.Title className="visually-hidden">Sunny places</Drawer.Title>
-          <div className="drawer-handle" aria-hidden />
+          <button
+            type="button"
+            className="drawer-handle-hit"
+            aria-label={snap === SNAP_POINTS[SNAP_POINTS.length - 1] ? 'Collapse panel' : 'Expand panel'}
+            onClick={() =>
+              setSnap((current) =>
+                current === SNAP_POINTS[SNAP_POINTS.length - 1] ? SNAP_POINTS[1] : SNAP_POINTS[SNAP_POINTS.length - 1],
+              )
+            }
+          >
+            <span className="drawer-handle" aria-hidden />
+          </button>
+          {/* Filters ride along inside the sheet so day/range/comfort stay reachable while browsing. */}
+          {!selected && (
+            <div className="drawer-controls">
+              <FilterControls />
+            </div>
+          )}
           <div className="drawer-scroll">{content}</div>
         </Drawer.Content>
       </Drawer.Portal>

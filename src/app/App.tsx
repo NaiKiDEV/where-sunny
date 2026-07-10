@@ -1,23 +1,33 @@
 import { MapView } from '../components/map/MapView';
 import { ResultsPanel } from '../components/panel/ResultsPanel';
 import { SearchDialog } from '../components/widgets/SearchDialog';
-import { TopControls } from '../components/widgets/TopControls';
+import { LocationChip, TopControls } from '../components/widgets/TopControls';
 import { WelcomeOverlay } from '../components/widgets/WelcomeOverlay';
+import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePinnedPlaces } from '../hooks/usePinnedPlaces';
 import { useSunnyPlaces } from '../hooks/useSunnyPlaces';
 import { useAppStore } from '../state/store';
 
 export default function App() {
   const origin = useAppStore((s) => s.origin);
+  const isMobile = useIsMobile();
   const { results, home, isLoading, isFetching, error } = useSunnyPlaces();
   const { pinnedScored, isLoading: isPinsLoading } = usePinnedPlaces();
+  const busy = isFetching || isPinsLoading;
 
   return (
     <div className="app">
       <MapView results={results} pinned={pinnedScored} />
       {origin ? (
         <>
-          <TopControls isFetching={isFetching || isPinsLoading} />
+          {/* Mobile keeps only the location chip afloat; filters live in the drawer header. */}
+          {isMobile ? (
+            <header className="top-controls">
+              <LocationChip isFetching={busy} />
+            </header>
+          ) : (
+            <TopControls isFetching={busy} />
+          )}
           <ResultsPanel
             results={results}
             pinnedScored={pinnedScored}

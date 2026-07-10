@@ -21,7 +21,9 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 94%;
+  /* Must equal the top snap point (0.96) so the sheet bottom meets the viewport
+     bottom when fully open — any mismatch pushes the last row off-screen. */
+  height: 96%;
   z-index: var(--z-panel);
   display: flex;
   flex-direction: column;
@@ -31,20 +33,58 @@
   outline: none;
 }
 
-.drawer-handle {
+/* Big invisible hit area so the grab handle is easy to tap; toggles snap. */
+.drawer-handle-hit {
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 28px;
+}
+
+.drawer-handle {
   width: 44px;
   height: 5px;
-  margin: 10px auto 6px;
   border-radius: var(--radius-pill);
   background: var(--color-line);
+  transition: background 120ms ease;
+}
+
+.drawer-handle-hit:hover .drawer-handle {
+  background: var(--color-ink-faint);
+}
+
+/* In-sheet filter header — pinned above the scroll area on mobile. Wraps rather
+   than scrolls so the comfort popover isn't clipped by an overflow context. */
+.drawer-controls {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-1) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--color-line);
+}
+
+.drawer-controls .segmented {
+  background: var(--color-sun-100);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.drawer-controls .segmented-option {
+  padding: 7px 12px;
 }
 
 .drawer-scroll {
   flex: 1;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding-bottom: var(--safe-bottom);
+  /* Clears the home-indicator area and gives the last row breathing room so it
+     never sits flush against (or under) the fold. */
+  padding-bottom: calc(var(--safe-bottom) + var(--space-6));
 }
 
 /* ============ shared panel content ============ */
@@ -94,6 +134,29 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+}
+
+.show-more {
+  width: 100%;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-sun-700);
+  font-weight: 650;
+  font-size: var(--text-sm);
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+.show-more:hover {
+  background: var(--color-sun-100);
+  border-color: var(--color-sun-500);
+}
+
+.show-more-collapse {
+  margin-top: var(--space-2);
+  color: var(--color-ink-soft);
 }
 
 .place-card {

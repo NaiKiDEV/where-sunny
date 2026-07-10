@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { ScoredPlace } from '../../core/types';
 import { TRAVEL_TIERS } from '../../core/candidates/tiers';
 import { useAppStore } from '../../state/store';
@@ -5,6 +6,9 @@ import { HomeAnchor } from './HomeAnchor';
 import { PlaceCard } from './PlaceCard';
 
 const DIM_RANGE_SCORE = 35;
+// Show a focused shortlist first; the long tail is one tap away. A 220-item
+// list is overwhelming and, in the mobile drawer, near-impossible to scroll.
+const SHORTLIST_LIMIT = 20;
 
 interface ResultsListProps {
   results: ScoredPlace[];
@@ -59,10 +63,13 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
   const openSearch = useAppStore((s) => s.openSearch);
   const pinned = useAppStore((s) => s.pinned);
   const hasPins = pinnedScored.length > 0;
+  const [showAll, setShowAll] = useState(false);
 
   // A watched city already shows under Interests — don't list it twice.
   const pinnedKeys = new Set(pinned.map((p) => p.key));
   const rangeResults = results.filter((s) => !pinnedKeys.has(`p:${s.place.key}`));
+  const visibleResults = showAll ? rangeResults : rangeResults.slice(0, SHORTLIST_LIMIT);
+  const hiddenCount = rangeResults.length - visibleResults.length;
 
   if (error) {
     return (
@@ -107,11 +114,23 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
           <p>Try a wider travel range — or a different starting point.</p>
         </div>
       ) : (
-        <ol className="place-list">
-          {rangeResults.map((scored, index) => (
-            <PlaceCard key={scored.place.key} scored={scored} rank={index + 1} />
-          ))}
-        </ol>
+        <>
+          <ol className="place-list">
+            {visibleResults.map((scored, index) => (
+              <PlaceCard key={scored.place.key} scored={scored} rank={index + 1} />
+            ))}
+          </ol>
+          {hiddenCount > 0 && (
+            <button type="button" className="show-more" onClick={() => setShowAll(true)}>
+              Show {hiddenCount} more {hiddenCount === 1 ? 'place' : 'places'}
+            </button>
+          )}
+          {showAll && rangeResults.length > SHORTLIST_LIMIT && (
+            <button type="button" className="show-more show-more-collapse" onClick={() => setShowAll(false)}>
+              Show fewer
+            </button>
+          )}
+        </>
       )}
     </div>
   );
