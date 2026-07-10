@@ -57,7 +57,12 @@ function DimRangeHint({ tier }: { tier: string }) {
 export function ResultsList({ results, pinnedScored, home, isLoading, error }: ResultsListProps) {
   const tier = useAppStore((s) => s.tier);
   const openSearch = useAppStore((s) => s.openSearch);
+  const pinned = useAppStore((s) => s.pinned);
   const hasPins = pinnedScored.length > 0;
+
+  // A watched city already shows under Interests — don't list it twice.
+  const pinnedKeys = new Set(pinned.map((p) => p.key));
+  const rangeResults = results.filter((s) => !pinnedKeys.has(`p:${s.place.key}`));
 
   if (error) {
     return (
@@ -71,7 +76,7 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
 
   if (isLoading) return <LoadingSkeleton />;
 
-  const isDimRange = results.length > 0 && results[0].score < DIM_RANGE_SCORE;
+  const isDimRange = rangeResults.length > 0 && rangeResults[0].score < DIM_RANGE_SCORE;
 
   return (
     <div className="results-list">
@@ -93,17 +98,17 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
 
       <div className="section-header">
         <span className="section-title">Sunniest in range</span>
-        {results.length > 0 && <span className="section-count">{results.length}</span>}
+        {rangeResults.length > 0 && <span className="section-count">{rangeResults.length}</span>}
       </div>
       {isDimRange && <DimRangeHint tier={tier} />}
-      {results.length === 0 ? (
+      {rangeResults.length === 0 ? (
         <div className="panel-message">
           <strong>No places found in this range.</strong>
           <p>Try a wider travel range — or a different starting point.</p>
         </div>
       ) : (
         <ol className="place-list">
-          {results.map((scored, index) => (
+          {rangeResults.map((scored, index) => (
             <PlaceCard key={scored.place.key} scored={scored} rank={index + 1} />
           ))}
         </ol>

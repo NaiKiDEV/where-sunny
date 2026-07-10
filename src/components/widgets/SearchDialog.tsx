@@ -90,6 +90,7 @@ export function SearchDialog() {
       setOrigin({ lat: match.lat, lon: match.lon, label: match.name });
     } else {
       const place = matchToPlace(match);
+      if (!pinnedKeys.has(place.key) && isPinLimitReached) return;
       addPin(place);
       selectPlace(place.key);
       closeSearch();

@@ -50,16 +50,20 @@ export const useAppStore = create<AppState>()(
           return { pinned: [...state.pinned, place] };
         }),
       removePin: (key) =>
-        set((state) => ({
-          pinned: state.pinned.filter((p) => p.key !== key),
-          selectedPlaceKey: state.selectedPlaceKey === key ? null : state.selectedPlaceKey,
-        })),
+        set((state) => {
+          if (!state.pinned.some((p) => p.key === key)) return state;
+          return {
+            pinned: state.pinned.filter((p) => p.key !== key),
+            selectedPlaceKey: state.selectedPlaceKey === key ? null : state.selectedPlaceKey,
+          };
+        }),
       selectPlace: (selectedPlaceKey) => set({ selectedPlaceKey }),
       openSearch: (searchMode) => set({ searchMode }),
       closeSearch: () => set({ searchMode: null }),
     }),
     {
       name: 'where-sunny-state',
+      version: 1,
       partialize: (state) => ({
         origin: state.origin,
         tier: state.tier,

@@ -37,8 +37,16 @@
 }
 
 .top-controls button,
-.top-controls .segmented {
+.top-controls .segmented,
+.top-controls .comfort-backdrop,
+.top-controls .comfort-popover {
   pointer-events: auto;
+}
+
+/* While the comfort popover is open, lift the controls above the results
+   drawer (--z-panel); child z-indexes can't escape this stacking context. */
+.top-controls:has(.comfort-popover) {
+  z-index: var(--z-overlay);
 }
 
 .location-chip {
@@ -292,14 +300,14 @@
 .comfort-backdrop {
   position: fixed;
   inset: 0;
-  z-index: var(--z-controls);
+  z-index: 1;
 }
 
 .comfort-popover {
   position: absolute;
   top: calc(100% + var(--space-2));
   right: 0;
-  z-index: calc(var(--z-controls) + 1);
+  z-index: 2;
   width: 230px;
   background: var(--color-surface);
   border-radius: var(--radius-md);

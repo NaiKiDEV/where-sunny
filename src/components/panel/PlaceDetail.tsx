@@ -59,11 +59,10 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const { place } = scored;
   const isHome = place.kind === 'home';
   const pinKey = place.kind === 'pin' ? place.key : `p:${place.key}`;
-  const isPinned = pinned.some((p) => p.key === pinKey || p.key === place.key);
+  const isPinned = pinned.some((p) => p.key === pinKey);
 
   const togglePin = () => {
     if (isPinned) {
-      removePin(place.key);
       removePin(pinKey);
     } else {
       addPin({ ...place, kind: 'pin', key: pinKey });
