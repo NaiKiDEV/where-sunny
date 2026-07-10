@@ -1,0 +1,59 @@
+import type { DayForecast, ScoredDay } from '../types';
+
+export const SCORE_WEIGHTS = { sun: 0.5, temp: 0.3, cloud: 0.1, rain: 0.4 } as const;
+
+/** User-adjustable temperature comfort plateau (°C, by daily max). */
+export interface ComfortPrefs {
+  idealMin: number;
+  idealMax: number;
+}
+
+export const DEFAULT_COMFORT: ComfortPrefs = { idealMin: 18, idealMax: 26 };
+
+export interface ComfortPreset extends ComfortPrefs {
+  id: string;
+  label: string;
+}
+
+export const COMFORT_PRESETS: ComfortPreset[] = [
+  { id: 'cool', label: 'Cool 10–22°', idealMin: 10, idealMax: 22 },
+  { id: 'mild', label: 'Mild 18–26°', idealMin: 18, idealMax: 26 },
+  { id: 'hot', label: 'Hot 24–32°', idealMin: 24, idealMax: 32 },
+  { id: 'any', label: 'Any temp', idealMin: -60, idealMax: 60 },
+];
+
+// comfort falls linearly from the plateau edges to 0 over these spans
+const COLD_SPAN = 18;
+const HOT_SPAN = 12;
+
+export function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+/** 1 inside the [idealMin, idealMax] plateau, falling linearly to 0 outside. */
+export function temperatureComfort(tempMax: number, prefs: ComfortPrefs = DEFAULT_COMFORT): number {
+  if (Number.isNaN(tempMax)) return 0.5;
+  if (tempMax >= prefs.idealMin && tempMax <= prefs.idealMax) return 1;
+  if (tempMax < prefs.idealMin) return clamp(1 - (prefs.idealMin - tempMax) / COLD_SPAN, 0, 1);
+  return clamp(1 - (tempMax - prefs.idealMax) / HOT_SPAN, 0, 1);
+}
+
+/**
+ * Sun score 0–100. Sunshine ratio (sunshine/daylight, self-correcting for
+ * latitude and season) and temperature comfort push up; cloud cover and rain
+ * probability pull down. Normalized so a perfect day reaches 100.
+ */
+export function scoreDay(day: DayForecast, prefs: ComfortPrefs = DEFAULT_COMFORT): number {
+  const sunshineRatio =
+    day.daylightDuration > 0 ? clamp(day.sunshineDuration / day.daylightDuration, 0, 1) : 0;
+  const positive =
+    SCORE_WEIGHTS.sun * sunshineRatio + SCORE_WEIGHTS.temp * temperatureComfort(day.tempMax, prefs);
+  const penalty =
+    SCORE_WEIGHTS.cloud * (day.cloudCoverMean / 100) + SCORE_WEIGHTS.rain * (day.precipProbMax / 100);
+  const normalized = (positive - penalty) / (SCORE_WEIGHTS.sun + SCORE_WEIGHTS.temp);
+  return Math.round(clamp(normalized, 0, 1) * 100);
+}
+
+export function scoreDays(days: DayForecast[], prefs: ComfortPrefs = DEFAULT_COMFORT): ScoredDay[] {
+  return days.map((day) => ({ ...day, score: scoreDay(day, prefs) }));
+}

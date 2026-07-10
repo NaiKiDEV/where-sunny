@@ -1,0 +1,128 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  background: var(--color-sun-100);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  border: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-sun-600);
+  outline-offset: 2px;
+}
+
+h1,
+h2,
+p,
+dl,
+dd,
+dt,
+ol,
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+ol,
+ul {
+  list-style: none;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.score-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.score-badge-lg {
+  min-width: 54px;
+  height: 54px;
+  font-size: var(--text-xl);
+}
+
+.button-primary {
+  background: linear-gradient(160deg, var(--color-sun-500), var(--color-sun-600));
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-chip);
+  transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease;
+}
+
+.button-primary:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.button-primary:active {
+  transform: translateY(0);
+}
+
+.button-primary:disabled {
+  filter: saturate(0.4);
+  cursor: default;
+  transform: none;
+}
+
+.button-secondary {
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-line);
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.button-secondary:hover {
+  border-color: var(--color-sun-600);
+  background: var(--color-sun-100);
+}

@@ -1,0 +1,48 @@
+:root {
+  /* warm, sun-drenched palette */
+  --color-ink: #2b2115;
+  --color-ink-soft: #6f5f48;
+  --color-ink-faint: #a3937a;
+  --color-surface: #fffdf7;
+  --color-surface-veil: rgba(255, 252, 244, 0.88);
+  --color-line: rgba(87, 66, 30, 0.14);
+  --color-sun-100: #fff3d6;
+  --color-sun-300: #f7cf6e;
+  --color-sun-500: #f2b33d;
+  --color-sun-600: #e79514;
+  --color-sun-700: #c97a06;
+  --color-danger: #c2452d;
+
+  --radius-lg: 22px;
+  --radius-md: 14px;
+  --radius-sm: 10px;
+  --radius-pill: 999px;
+
+  --shadow-soft: 0 12px 32px rgba(76, 51, 5, 0.18), 0 2px 8px rgba(76, 51, 5, 0.08);
+  --shadow-chip: 0 2px 12px rgba(76, 51, 5, 0.16);
+
+  --font-sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  --font-display: 'Segoe UI Variable Display', 'Segoe UI', system-ui, sans-serif;
+
+  --text-xs: 0.72rem;
+  --text-sm: 0.84rem;
+  --text-base: 0.95rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.55rem;
+  --text-hero: clamp(2rem, 1.4rem + 2.5vw, 3rem);
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 36px;
+
+  --z-controls: 20;
+  --z-panel: 30;
+  --z-overlay: 40;
+
+  --panel-width: 400px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-top: env(safe-area-inset-top, 0px);
+}
