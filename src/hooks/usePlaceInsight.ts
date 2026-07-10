@@ -11,6 +11,7 @@ export interface PlaceInsight {
   hoursByDate: Map<string, HourPoint[]>;
   isLoadingConsensus: boolean;
   isLoadingHours: boolean;
+  isHoursError: boolean;
 }
 
 /**
@@ -58,5 +59,6 @@ export function usePlaceInsight(place: Place | null): PlaceInsight {
     hoursByDate,
     isLoadingConsensus: !!place && modelsQuery.isLoading,
     isLoadingHours: !!place && hourlyQuery.isLoading,
+    isHoursError: !!place && hourlyQuery.isError,
   };
 }

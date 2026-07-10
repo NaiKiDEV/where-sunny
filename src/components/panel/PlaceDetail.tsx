@@ -126,7 +126,17 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
             {weather.label} · {dayLabel(day.date)}
           </span>
         </div>
-        <SunTimeline hours={hours} />
+        {insight.isLoadingHours ? (
+          <p className="sun-timeline-note">Loading hour-by-hour…</p>
+        ) : hours.length > 0 ? (
+          <SunTimeline hours={hours} />
+        ) : (
+          <p className="sun-timeline-note">
+            {insight.isHoursError
+              ? 'Hour-by-hour forecast is unavailable right now — try again shortly.'
+              : 'No hourly forecast for this day.'}
+          </p>
+        )}
         <dl className="day-stats-grid">
           <div>
             <dt>Sunshine</dt>

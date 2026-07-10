@@ -1,4 +1,6 @@
+import { useRef, useState } from 'react';
 import type { HourPoint } from '../../core/weather/hourly';
+import { formatTemp } from '../../lib/format';
 
 const RAIN_THRESHOLD = 40;
 
@@ -14,21 +16,77 @@ function hourColor(point: HourPoint): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-/** 24 hour cells: night is dark, day blends gray→gold by clearness, rain gets a blue underline. */
+function formatHour(hour: number): string {
+  return `${String(hour).padStart(2, '0')}:00`;
+}
+
+/**
+ * 24 hour cells: night is dark, day blends gray→gold by clearness, rain gets a
+ * blue underline. Tap or drag across the bar (or hover on desktop) to read any
+ * hour's cloud, rain, and temperature — the hover-only tooltip left touch users
+ * with no way to see the hourly breakdown.
+ */
 export function SunTimeline({ hours }: { hours: HourPoint[] }) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeHour, setActiveHour] = useState<number | null>(null);
+
   if (hours.length === 0) return null;
+
+  const active = activeHour === null ? null : (hours.find((h) => h.hour === activeHour) ?? null);
+
+  const scrubToClientX = (clientX: number) => {
+    const track = trackRef.current;
+    if (!track) return;
+    const rect = track.getBoundingClientRect();
+    const ratio = (clientX - rect.left) / rect.width;
+    const index = Math.max(0, Math.min(hours.length - 1, Math.floor(ratio * hours.length)));
+    setActiveHour(hours[index].hour);
+  };
+
   return (
     <div className="sun-timeline">
-      <div className="sun-timeline-track">
+      <div className="sun-timeline-readout" aria-live="polite">
+        {active ? (
+          <>
+            <span className="sun-timeline-readout-dot" style={{ background: hourColor(active) }} aria-hidden />
+            <span className="sun-timeline-readout-time">{formatHour(active.hour)}</span>
+            <span className="sun-timeline-readout-stats">
+              {active.isDay ? `${active.cloud}% cloud` : 'Night'} · {active.precipProb}% rain ·{' '}
+              {formatTemp(active.temp)}
+            </span>
+          </>
+        ) : (
+          <span className="sun-timeline-readout-hint">Tap the bar for any hour</span>
+        )}
+      </div>
+      <div
+        ref={trackRef}
+        className="sun-timeline-track"
+        role="group"
+        aria-label="Hour by hour sky, cloud and rain"
+        onPointerDown={(e) => scrubToClientX(e.clientX)}
+        onPointerMove={(e) => scrubToClientX(e.clientX)}
+        onPointerLeave={(e) => {
+          // Clear on mouse-out for desktop, but keep the tapped hour on touch.
+          if (e.pointerType === 'mouse') setActiveHour(null);
+        }}
+      >
         {hours.map((point) => (
-          <div
+          <button
+            type="button"
             key={point.hour}
-            className="sun-timeline-cell"
+            className={`sun-timeline-cell${point.hour === activeHour ? ' is-active' : ''}`}
             style={{ background: hourColor(point) }}
-            title={`${String(point.hour).padStart(2, '0')}:00 — ${point.cloud}% cloud, ${point.precipProb}% rain`}
+            aria-label={`${formatHour(point.hour)}: ${
+              point.isDay
+                ? `${point.cloud}% cloud, ${point.precipProb}% rain, ${formatTemp(point.temp)}`
+                : 'night'
+            }`}
+            onFocus={() => setActiveHour(point.hour)}
+            onClick={() => setActiveHour(point.hour)}
           >
             {point.precipProb >= RAIN_THRESHOLD && point.isDay && <span className="sun-timeline-rain" />}
-          </div>
+          </button>
         ))}
       </div>
       <div className="sun-timeline-scale" aria-hidden>
