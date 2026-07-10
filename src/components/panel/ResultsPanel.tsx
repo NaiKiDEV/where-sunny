@@ -64,18 +64,8 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
       <Drawer.Portal>
         <Drawer.Content className="drawer-content" aria-describedby={undefined}>
           <Drawer.Title className="visually-hidden">Sunny places</Drawer.Title>
-          <button
-            type="button"
-            className="drawer-handle-hit"
-            aria-label={snap === SNAP_POINTS[SNAP_POINTS.length - 1] ? 'Collapse panel' : 'Expand panel'}
-            onClick={() =>
-              setSnap((current) =>
-                current === SNAP_POINTS[SNAP_POINTS.length - 1] ? SNAP_POINTS[1] : SNAP_POINTS[SNAP_POINTS.length - 1],
-              )
-            }
-          >
-            <span className="drawer-handle" aria-hidden />
-          </button>
+          {/* vaul's own handle: drags the sheet and taps cycle through snap points. */}
+          <Drawer.Handle className="drawer-handle" />
           {/* Filters ride along inside the sheet so day/range/comfort stay reachable while browsing. */}
           {!selected && (
             <div className="drawer-controls">

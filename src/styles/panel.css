@@ -33,25 +33,19 @@
   outline: none;
 }
 
-/* Big invisible hit area so the grab handle is easy to tap; toggles snap. */
-.drawer-handle-hit {
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 28px;
-}
-
+/* vaul's native handle (drag + tap-to-cycle). It ships its own generous tap
+   hit area; we only restyle the visible pill and its spacing. */
 .drawer-handle {
-  width: 44px;
-  height: 5px;
+  flex-shrink: 0;
+  width: 44px !important;
+  height: 5px !important;
+  margin: 12px auto 10px !important;
   border-radius: var(--radius-pill);
   background: var(--color-line);
   transition: background 120ms ease;
 }
 
-.drawer-handle-hit:hover .drawer-handle {
+.drawer-handle:hover {
   background: var(--color-ink-faint);
 }
 
