@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Drawer } from 'vaul';
 import type { ScoredPlace } from '../../core/types';
 import { useIsMobile } from '../../hooks/useMediaQuery';
@@ -29,6 +29,15 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
     pinnedScored.find((r) => r.place.key === selectedPlaceKey) ??
     results.find((r) => r.place.key === selectedPlaceKey) ??
     (home?.place.key === selectedPlaceKey ? home : null);
+
+  // Selecting a place (often by tapping a map pin) should lift the sheet into
+  // view if it's sitting at the lowest snap — never collapse it if already up.
+  useEffect(() => {
+    if (!selectedPlaceKey) return;
+    setSnap((current) =>
+      typeof current === 'number' && current < SNAP_POINTS[1] ? SNAP_POINTS[1] : current,
+    );
+  }, [selectedPlaceKey]);
 
   const content = selected ? (
     // key resets the detail's active-day state when selection jumps between places
