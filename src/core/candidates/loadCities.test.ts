@@ -23,6 +23,28 @@ describe('parseCityDataset', () => {
     });
   });
 
+  it('reads elevation from v2 rows', () => {
+    const places = parseCityDataset({
+      v: 2,
+      count: 2,
+      rows: [
+        ['Davos', 'CH', 46.8, 9.83, 11_000, 1560],
+        ['Amsterdam', 'NL', 52.37, 4.9, 900_000, 2],
+      ],
+    });
+    expect(places[0].elevation).toBe(1560);
+    expect(places[1].elevation).toBe(2);
+  });
+
+  it('omits elevation for v1 rows', () => {
+    const places = parseCityDataset({
+      v: 1,
+      count: 1,
+      rows: [['Vilnius', 'LT', 54.687, 25.28, 590_000]],
+    });
+    expect(places[0].elevation).toBeUndefined();
+  });
+
   it('skips malformed rows instead of failing the whole dataset', () => {
     const places = parseCityDataset({
       v: 1,

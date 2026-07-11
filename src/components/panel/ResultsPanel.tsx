@@ -8,6 +8,7 @@ import { useAppStore } from '../../state/store';
 import { FilterControls } from '../widgets/TopControls';
 import { PlaceDetail } from './PlaceDetail';
 import { ResultsList } from './ResultsList';
+import { TripsView } from './TripsView';
 
 /** Detail-shaped placeholder while a previewed destination's forecast is fetched. */
 function DetailLoading({ place, error, onBack }: { place: Place; error: Error | null; onBack: () => void }) {
@@ -57,6 +58,7 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   const previewPlace = useAppStore((s) => s.previewPlace);
   const closeDetail = useAppStore((s) => s.closeDetail);
   const searchMode = useAppStore((s) => s.searchMode);
+  const tripsOpen = useAppStore((s) => s.tripsOpen);
   const preview = usePreviewPlace();
   const [snap, setSnap] = useState<number | string | null>(SNAP_POINTS[1]);
 
@@ -89,6 +91,8 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   } else if (selected) {
     // key resets the detail's active-day state when selection jumps between places
     content = <PlaceDetail key={selected.place.key} scored={selected} />;
+  } else if (tripsOpen) {
+    content = <TripsView />;
   } else {
     content = (
       <ResultsList
@@ -125,7 +129,7 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
           {/* vaul's own handle: drags the sheet and taps cycle through snap points. */}
           <Drawer.Handle className="drawer-handle" />
           {/* Filters ride along inside the sheet so day/range/comfort stay reachable while browsing. */}
-          {!isDetail && (
+          {!isDetail && !tripsOpen && (
             <div className="drawer-controls">
               <FilterControls />
             </div>

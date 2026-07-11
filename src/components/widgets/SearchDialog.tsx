@@ -19,6 +19,7 @@ function matchToPlace(match: GeoMatch): Place {
     lat: match.lat,
     lon: match.lon,
     population: match.population ?? 0,
+    elevation: match.elevation,
   };
 }
 

@@ -13,6 +13,10 @@ export const DAILY_VARS = [
   'temperature_2m_max',
   'temperature_2m_min',
   'weather_code',
+  'apparent_temperature_max',
+  'apparent_temperature_min',
+  'uv_index_max',
+  'wind_speed_10m_max',
 ] as const;
 
 export interface OpenMeteoDaily {
@@ -24,6 +28,10 @@ export interface OpenMeteoDaily {
   temperature_2m_max?: (number | null)[];
   temperature_2m_min?: (number | null)[];
   weather_code?: (number | null)[];
+  apparent_temperature_max?: (number | null)[];
+  apparent_temperature_min?: (number | null)[];
+  uv_index_max?: (number | null)[];
+  wind_speed_10m_max?: (number | null)[];
 }
 
 interface OpenMeteoLocation {
@@ -69,6 +77,11 @@ export function chunkArray<T>(items: T[], size: number): T[][] {
   return chunks;
 }
 
+/** Coerce Open-Meteo's `number | null | undefined` cells to `number | undefined`. */
+function optionalNum(value: number | null | undefined): number | undefined {
+  return typeof value === 'number' ? value : undefined;
+}
+
 export function mapDaily(daily: OpenMeteoDaily): DayForecast[] {
   const time = daily.time ?? [];
   const days: DayForecast[] = [];
@@ -87,6 +100,10 @@ export function mapDaily(daily: OpenMeteoDaily): DayForecast[] {
       tempMax: daily.temperature_2m_max?.[i] ?? 15,
       tempMin: daily.temperature_2m_min?.[i] ?? 8,
       weatherCode: daily.weather_code?.[i] ?? 3,
+      apparentTempMax: optionalNum(daily.apparent_temperature_max?.[i]),
+      apparentTempMin: optionalNum(daily.apparent_temperature_min?.[i]),
+      uvIndexMax: optionalNum(daily.uv_index_max?.[i]),
+      windMax: optionalNum(daily.wind_speed_10m_max?.[i]),
     });
   }
   return days;

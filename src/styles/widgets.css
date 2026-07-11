@@ -114,6 +114,7 @@
 }
 
 .icon-chip {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -132,6 +133,24 @@
 .icon-chip:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-soft);
+}
+
+.icon-chip-badge {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--color-sun-600);
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
 }
 
 .menu-backdrop {

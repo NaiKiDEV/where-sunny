@@ -1,7 +1,8 @@
-import { Cloud, CloudRain, Sun, Thermometer, type LucideIcon } from 'lucide-react';
+import { Cloud, CloudRain, Sun, Thermometer, Wind, type LucideIcon } from 'lucide-react';
 import { explainScore, type ScorePart } from '../../core/scoring/explain';
+import { comfortTemp } from '../../core/scoring/score';
 import type { ScoredDay } from '../../core/types';
-import { formatSunHours, formatTemp } from '../../lib/format';
+import { formatSunHours, formatTemp, formatWind } from '../../lib/format';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useAppStore } from '../../state/store';
 
@@ -10,6 +11,7 @@ const PART_META: Record<ScorePart['id'], { label: string; Icon: LucideIcon; barC
   warmth: { label: 'Warmth', Icon: Thermometer, barClass: 'breakdown-bar-warmth' },
   cloud: { label: 'Clouds', Icon: Cloud, barClass: 'breakdown-bar-cloud' },
   rain: { label: 'Rain risk', Icon: CloudRain, barClass: 'breakdown-bar-rain' },
+  wind: { label: 'Wind', Icon: Wind, barClass: 'breakdown-bar-wind' },
 };
 
 function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, idealMax: number): string {
@@ -17,15 +19,19 @@ function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, ideal
     case 'sun':
       return `${formatSunHours(day.sunshineDuration)} of ${formatSunHours(day.daylightDuration)} daylight`;
     case 'warmth': {
-      const temp = formatTemp(day.tempMax);
-      if (day.tempMax < idealMin) return `${temp} - cooler than your ${idealMin}–${idealMax}° zone`;
-      if (day.tempMax > idealMax) return `${temp} - hotter than your ${idealMin}–${idealMax}° zone`;
-      return `${temp} - in your comfort zone`;
+      const felt = comfortTemp(day);
+      const temp = formatTemp(felt);
+      const feelsNote = day.apparentTempMax === undefined ? '' : ' feels-like';
+      if (felt < idealMin) return `${temp}${feelsNote} - cooler than your ${idealMin}–${idealMax}° zone`;
+      if (felt > idealMax) return `${temp}${feelsNote} - hotter than your ${idealMin}–${idealMax}° zone`;
+      return `${temp}${feelsNote} - in your comfort zone`;
     }
     case 'cloud':
       return `${Math.round(day.cloudCoverMean)}% average cover`;
     case 'rain':
       return `${Math.round(day.precipProbMax)}% chance of rain`;
+    case 'wind':
+      return day.windMax === undefined ? '' : `${formatWind(day.windMax)} peak wind`;
   }
 }
 

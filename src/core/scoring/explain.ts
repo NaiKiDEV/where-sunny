@@ -1,10 +1,18 @@
 import type { DayForecast } from '../types';
 import type { ComfortPrefs } from './score';
-import { clamp, DEFAULT_COMFORT, SCORE_WEIGHTS, scoreDay, temperatureComfort } from './score';
+import {
+  clamp,
+  comfortTemp,
+  DEFAULT_COMFORT,
+  SCORE_WEIGHTS,
+  scoreDay,
+  temperatureComfort,
+  windPenaltyFactor,
+} from './score';
 
 const NORM = SCORE_WEIGHTS.sun + SCORE_WEIGHTS.temp;
 
-export type ScorePartId = 'sun' | 'warmth' | 'cloud' | 'rain';
+export type ScorePartId = 'sun' | 'warmth' | 'cloud' | 'rain' | 'wind';
 
 export interface ScorePart {
   id: ScorePartId;
@@ -34,7 +42,7 @@ export interface ScoreBreakdown {
 export function explainScore(day: DayForecast, prefs: ComfortPrefs = DEFAULT_COMFORT): ScoreBreakdown {
   const sunshineRatio =
     day.daylightDuration > 0 ? clamp(day.sunshineDuration / day.daylightDuration, 0, 1) : 0;
-  const comfort = temperatureComfort(day.tempMax, prefs);
+  const comfort = temperatureComfort(comfortTemp(day), prefs);
 
   const floats: { id: ScorePartId; value: number; max: number }[] = [
     { id: 'sun', value: ((SCORE_WEIGHTS.sun * sunshineRatio) / NORM) * 100, max: (SCORE_WEIGHTS.sun / NORM) * 100 },
@@ -50,6 +58,16 @@ export function explainScore(day: DayForecast, prefs: ComfortPrefs = DEFAULT_COM
       max: -(SCORE_WEIGHTS.rain / NORM) * 100,
     },
   ];
+
+  // Wind only appears in the receipt when the forecast actually supplies it,
+  // so pre-enrichment data keeps its original four-part breakdown.
+  if (day.windMax !== undefined) {
+    floats.push({
+      id: 'wind',
+      value: -((SCORE_WEIGHTS.wind * windPenaltyFactor(day.windMax)) / NORM) * 100,
+      max: -(SCORE_WEIGHTS.wind / NORM) * 100,
+    });
+  }
 
   const raw = floats.reduce((sum, f) => sum + f.value, 0);
   const score = scoreDay(day, prefs);

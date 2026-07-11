@@ -1,6 +1,14 @@
 import type { Place } from '../types';
 
-type CityRow = [name: string, country: string, lat: number, lon: number, population: number];
+// v1: [name, country, lat, lon, population]; v2 appends elevation (metres).
+type CityRow = [
+  name: string,
+  country: string,
+  lat: number,
+  lon: number,
+  population: number,
+  elevation?: number,
+];
 
 interface CityDataset {
   v: number;
@@ -11,7 +19,7 @@ interface CityDataset {
 function isCityDataset(value: unknown): value is CityDataset {
   if (typeof value !== 'object' || value === null) return false;
   const dataset = value as Partial<CityDataset>;
-  return dataset.v === 1 && Array.isArray(dataset.rows);
+  return typeof dataset.v === 'number' && dataset.v >= 1 && Array.isArray(dataset.rows);
 }
 
 export function parseCityDataset(json: unknown): Place[] {
@@ -20,9 +28,11 @@ export function parseCityDataset(json: unknown): Place[] {
   }
   const places: Place[] = [];
   for (let i = 0; i < json.rows.length; i++) {
-    const [name, country, lat, lon, population] = json.rows[i];
+    const [name, country, lat, lon, population, elevation] = json.rows[i];
     if (typeof name !== 'string' || !Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    places.push({ key: `c${i}`, kind: 'city', name, country, lat, lon, population });
+    const place: Place = { key: `c${i}`, kind: 'city', name, country, lat, lon, population };
+    if (typeof elevation === 'number' && Number.isFinite(elevation)) place.elevation = elevation;
+    places.push(place);
   }
   return places;
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { DayForecast } from '../types';
-import { scoreDay, temperatureComfort } from './score';
+import { comfortTemp, scoreDay, temperatureComfort, windPenaltyFactor } from './score';
 
 function day(overrides: Partial<DayForecast> = {}): DayForecast {
   return {
@@ -93,5 +93,39 @@ describe('scoreDay', () => {
         expect(score).toBeLessThanOrEqual(100);
       }
     }
+  });
+
+  it('scores identically when enriched fields are absent (backward compatible)', () => {
+    // A fixture with no apparentTempMax/windMax must score exactly as before.
+    expect(scoreDay(day({ tempMax: 22 }))).toBe(scoreDay(day({ tempMax: 22, windMax: 5 })));
+  });
+
+  it('reads feels-like temperature for comfort when present', () => {
+    // Dry-bulb sits in the comfort plateau, but it feels frigid in the wind.
+    const dryBulbComfortable = scoreDay(day({ tempMax: 20 }));
+    const feelsFrigid = scoreDay(day({ tempMax: 20, apparentTempMax: 2 }));
+    expect(feelsFrigid).toBeLessThan(dryBulbComfortable);
+  });
+
+  it('penalizes a strong wind', () => {
+    const calm = scoreDay(day({ windMax: 10 }));
+    const gale = scoreDay(day({ windMax: 60 }));
+    expect(calm).toBeGreaterThan(gale);
+  });
+});
+
+describe('windPenaltyFactor', () => {
+  it('is 0 for calm and unknown wind, ramping to 1 in a gale', () => {
+    expect(windPenaltyFactor(undefined)).toBe(0);
+    expect(windPenaltyFactor(10)).toBe(0);
+    expect(windPenaltyFactor(60)).toBe(1);
+    expect(windPenaltyFactor(37.5)).toBeCloseTo(0.5, 5);
+  });
+});
+
+describe('comfortTemp', () => {
+  it('prefers feels-like, falling back to dry-bulb', () => {
+    expect(comfortTemp(day({ tempMax: 20, apparentTempMax: 15 }))).toBe(15);
+    expect(comfortTemp(day({ tempMax: 20 }))).toBe(20);
   });
 });

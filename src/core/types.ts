@@ -18,6 +18,8 @@ export interface Place extends LatLon {
   country: string;
   population: number;
   admin1?: string;
+  /** Metres above sea level (GeoNames `dem` / geocoding elevation). Undefined if unknown. */
+  elevation?: number;
 }
 
 export interface DayForecast {
@@ -29,6 +31,11 @@ export interface DayForecast {
   tempMax: number; // °C
   tempMin: number; // °C
   weatherCode: number; // WMO code
+  // Tier-1 enrichment (optional: pre-v2 cache entries and test fixtures omit them).
+  apparentTempMax?: number; // °C, "feels like" daily max (wind + humidity adjusted)
+  apparentTempMin?: number; // °C
+  uvIndexMax?: number; // 0–11+ UV index, peak of day
+  windMax?: number; // km/h, max 10 m wind speed
 }
 
 export interface ScoredDay extends DayForecast {

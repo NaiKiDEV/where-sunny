@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ChevronLeft, MapPin, Star } from 'lucide-react';
+import { ChevronLeft, MapPin, Route, Star } from 'lucide-react';
 import type { ScoredDay, ScoredPlace } from '../../core/types';
+import { isNotableTerrain, terrainOf, TERRAIN_LABEL } from '../../core/candidates/feature';
 import { usePlaceInsight } from '../../hooks/usePlaceInsight';
 import {
   countryFlag,
@@ -8,8 +9,11 @@ import {
   describeWeather,
   directionsUrl,
   formatDistance,
+  formatElevation,
   formatSunHours,
   formatTemp,
+  formatWind,
+  uvBand,
 } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
 import { scoreWord } from '../../lib/scoreLabel';
@@ -49,6 +53,10 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const pinned = useAppStore((s) => s.pinned);
   const addPin = useAppStore((s) => s.addPin);
   const removePin = useAppStore((s) => s.removePin);
+  const trips = useAppStore((s) => s.trips);
+  const activeTripId = useAppStore((s) => s.activeTripId);
+  const addToTrip = useAppStore((s) => s.addToTrip);
+  const removeFromTrip = useAppStore((s) => s.removeFromTrip);
 
   const [activeDate, setActiveDate] = useState(scored.best.date);
   const day = scored.days.find((d) => d.date === activeDate) ?? scored.best;
@@ -61,6 +69,11 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const hours = insight.hoursByDate.get(day.date) ?? [];
 
   const { place } = scored;
+  const terrain = terrainOf(place.elevation);
+  const elevationText =
+    place.elevation === undefined
+      ? null
+      : `${isNotableTerrain(terrain) ? `${TERRAIN_LABEL[terrain]} · ` : ''}${formatElevation(place.elevation)}`;
   const isHome = place.kind === 'home';
   const pinKey = place.kind === 'pin' ? place.key : `p:${place.key}`;
   const isPinned = pinned.some((p) => p.key === pinKey);
@@ -73,6 +86,10 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
     }
   };
 
+  const activeTrip = trips.find((t) => t.id === activeTripId) ?? null;
+  const inTrip = activeTrip?.stops.some((s) => s.placeKey === place.key) ?? false;
+  const toggleTrip = () => (inTrip ? removeFromTrip(place.key) : addToTrip(place));
+
   const startFromHere = () => setOrigin({ lat: place.lat, lon: place.lon, label: place.name });
 
   return (
@@ -81,36 +98,50 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
         <button type="button" className="back-button" onClick={closeDetail}>
           <ChevronLeft size={16} aria-hidden /> Back
         </button>
-        <div className="place-detail-header-actions">
-          {!isHome && (
-            <button
-              type="button"
-              className={`pin-toggle pin-toggle-detail${isPinned ? ' is-pinned' : ''}`}
-              onClick={togglePin}
-            >
-              <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
-              {isPinned ? 'Watching' : 'Watch'}
-            </button>
-          )}
-          <span className="score-badge-stack">
-            <span
-              className="score-badge score-badge-lg"
-              style={{ background: scoreColor(scored.score), color: scoreTextColor(scored.score) }}
-            >
-              {scored.score}
-            </span>
-            <span className="score-word">{scoreWord(scored.score)}</span>
-          </span>
-        </div>
       </header>
 
-      <h2 className="place-detail-name">
-        {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
-      </h2>
-      <p className="place-detail-sub">
-        {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm)} away`} · best on{' '}
-        {dayLabel(scored.best.date)}
-      </p>
+      <div className="place-detail-title">
+        <div className="place-detail-title-text">
+          <h2 className="place-detail-name">
+            {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
+          </h2>
+          <p className="place-detail-sub">
+            {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm)} away`} · best on{' '}
+            {dayLabel(scored.best.date)}
+            {elevationText && ` · ${elevationText}`}
+          </p>
+        </div>
+        <span className="score-badge-stack">
+          <span
+            className="score-badge score-badge-lg"
+            style={{ background: scoreColor(scored.score), color: scoreTextColor(scored.score) }}
+          >
+            {scored.score}
+          </span>
+          <span className="score-word">{scoreWord(scored.score)}</span>
+        </span>
+      </div>
+
+      {!isHome && (
+        <div className="place-detail-actions">
+          <button
+            type="button"
+            className={`trip-toggle${inTrip ? ' is-in-trip' : ''}`}
+            onClick={toggleTrip}
+          >
+            <Route size={15} strokeWidth={2} aria-hidden />
+            {inTrip ? 'In trip' : 'Add to trip'}
+          </button>
+          <button
+            type="button"
+            className={`pin-toggle pin-toggle-detail${isPinned ? ' is-pinned' : ''}`}
+            onClick={togglePin}
+          >
+            <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
+            {isPinned ? 'Watching' : 'Watch'}
+          </button>
+        </div>
+      )}
 
       <div className="day-strip" role="tablist" aria-label="Forecast days">
         {scored.days.map((d) => (
@@ -163,6 +194,26 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
               {formatTemp(day.tempMin)} – {formatTemp(day.tempMax)}
             </dd>
           </div>
+          {day.apparentTempMax !== undefined && (
+            <div>
+              <dt>Feels like</dt>
+              <dd>{formatTemp(day.apparentTempMax)}</dd>
+            </div>
+          )}
+          {day.uvIndexMax !== undefined && (
+            <div>
+              <dt>UV index</dt>
+              <dd>
+                {Math.round(day.uvIndexMax)} · {uvBand(day.uvIndexMax)}
+              </dd>
+            </div>
+          )}
+          {day.windMax !== undefined && (
+            <div>
+              <dt>Wind</dt>
+              <dd>{formatWind(day.windMax)}</dd>
+            </div>
+          )}
         </dl>
       </div>
 

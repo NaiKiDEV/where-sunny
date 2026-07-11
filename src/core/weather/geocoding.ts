@@ -9,6 +9,7 @@ export interface GeoMatch {
   lat: number;
   lon: number;
   population?: number;
+  elevation?: number;
 }
 
 interface GeocodingResult {
@@ -20,6 +21,7 @@ interface GeocodingResult {
   country_code?: string;
   admin1?: string;
   population?: number;
+  elevation?: number;
 }
 
 export async function searchPlaces(
@@ -43,5 +45,6 @@ export async function searchPlaces(
     lat: r.latitude,
     lon: r.longitude,
     population: r.population,
+    elevation: Number.isFinite(r.elevation) ? r.elevation : undefined,
   }));
 }

@@ -4,6 +4,7 @@ import { countryFlag, dayLabel, formatDistance, formatSunHours, formatTemp } fro
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useAppStore } from '../../state/store';
+import { TerrainTag } from './TerrainTag';
 
 interface PlaceCardProps {
   scored: ScoredPlace;
@@ -24,6 +25,7 @@ export function PlaceCard({ scored, rank }: PlaceCardProps) {
         <span className="place-card-body">
           <span className="place-name">
             {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
+            <TerrainTag elevation={place.elevation} />
           </span>
           <span className="place-meta">
             {dayLabel(best.date)} · {formatSunHours(best.sunshineDuration)} sun ·{' '}

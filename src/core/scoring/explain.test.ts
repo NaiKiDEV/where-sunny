@@ -67,6 +67,21 @@ describe('explainScore', () => {
     expect(byId.rain.points).toBeLessThanOrEqual(0);
   });
 
+  it('omits the wind part when the forecast has no wind data', () => {
+    const breakdown = explainScore(day());
+    expect(breakdown.parts.some((p) => p.id === 'wind')).toBe(false);
+    expect(breakdown.parts).toHaveLength(4);
+  });
+
+  it('adds a non-positive wind part and still sums to the score when wind is present', () => {
+    const d = day({ windMax: 60, sunshineDuration: 30_000, precipProbMax: 20 });
+    const breakdown = explainScore(d);
+    const wind = breakdown.parts.find((p) => p.id === 'wind');
+    expect(wind).toBeDefined();
+    expect(wind!.points).toBeLessThanOrEqual(0);
+    if (!breakdown.isCapped) expect(partsSum(breakdown)).toBe(scoreDay(d));
+  });
+
   it('respects comfort prefs in the warmth part', () => {
     const cold = explainScore(day({ tempMax: 12 }), { idealMin: 18, idealMax: 26 });
     const fine = explainScore(day({ tempMax: 12 }), { idealMin: 10, idealMax: 22 });

@@ -1,5 +1,7 @@
 // Builds public/data/cities.json from the GeoNames cities5000 dataset (CC-BY 4.0).
-// Output row format: [name, countryCode, lat, lon, population], sorted by population desc.
+// Output row format: [name, countryCode, lat, lon, population, elevationM], sorted by
+// population desc. elevationM (GeoNames `dem`, SRTM/GTOPO30 metres) drives terrain
+// context (alpine/highland/lowland) - see src/core/candidates/feature.ts.
 import { writeFile, mkdir } from 'node:fs/promises';
 import { gzipSync } from 'node:zlib';
 import { unzipSync } from 'fflate';
@@ -10,7 +12,7 @@ const MIN_POPULATION = 1000;
 const COORD_DECIMALS = 3; // ~110 m precision, plenty for weather + map markers
 
 // Column indices per https://download.geonames.org/export/dump/readme.txt
-const COL = { name: 1, lat: 4, lon: 5, featureClass: 6, countryCode: 8, population: 14 };
+const COL = { name: 1, lat: 4, lon: 5, featureClass: 6, countryCode: 8, population: 14, dem: 16 };
 
 async function download(url) {
   const res = await fetch(url);
@@ -29,7 +31,10 @@ function parseRows(tsvText) {
     const lat = Number(Number(cols[COL.lat]).toFixed(COORD_DECIMALS));
     const lon = Number(Number(cols[COL.lon]).toFixed(COORD_DECIMALS));
     if (!Number.isFinite(lat) || !Number.isFinite(lon)) continue;
-    rows.push([cols[COL.name], cols[COL.countryCode], lat, lon, population]);
+    // `dem` is frequently -9999 (no data) or blank; store 0 so it reads as "unknown/sea level".
+    const dem = Number(cols[COL.dem]);
+    const elevation = Number.isFinite(dem) && dem > -1000 ? Math.round(dem) : 0;
+    rows.push([cols[COL.name], cols[COL.countryCode], lat, lon, population, elevation]);
   }
   rows.sort((a, b) => b[4] - a[4]);
   return rows;
@@ -44,7 +49,7 @@ async function main() {
 
   const rows = parseRows(new TextDecoder().decode(txt));
   const payload = JSON.stringify({
-    v: 1,
+    v: 2,
     source: 'GeoNames cities5000, CC-BY 4.0, https://www.geonames.org',
     count: rows.length,
     rows,

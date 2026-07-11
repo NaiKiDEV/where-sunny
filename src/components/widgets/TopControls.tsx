@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, MapPin, Search, Sun } from 'lucide-react';
+import { ChevronDown, MapPin, Route, Search, Sun } from 'lucide-react';
 import { TIER_ORDER, TRAVEL_TIERS } from '../../core/candidates/tiers';
 import { TIME_WINDOWS } from '../../core/scoring/window';
 import { useAppStore } from '../../state/store';
@@ -91,12 +91,27 @@ function DestinationSearchButton() {
   );
 }
 
-/** Location menu + destination search - the always-present row over the map. */
+/** Opens the trips surface; badge shows how many stops the active trip holds. */
+function TripsButton() {
+  const openTrips = useAppStore((s) => s.openTrips);
+  const trips = useAppStore((s) => s.trips);
+  const activeTripId = useAppStore((s) => s.activeTripId);
+  const count = trips.find((t) => t.id === activeTripId)?.stops.length ?? 0;
+  return (
+    <button type="button" className="icon-chip" aria-label="Trips" onClick={openTrips}>
+      <Route size={18} strokeWidth={2} aria-hidden />
+      {count > 0 && <span className="icon-chip-badge">{count}</span>}
+    </button>
+  );
+}
+
+/** Location menu + destination search + trips - the always-present row over the map. */
 export function LocationBar({ isFetching }: { isFetching: boolean }) {
   return (
     <div className="top-controls-row">
       <LocationMenu />
       <DestinationSearchButton />
+      <TripsButton />
       {isFetching && <span className="fetch-hint">Updating…</span>}
     </div>
   );

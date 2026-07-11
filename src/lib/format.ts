@@ -16,6 +16,28 @@ export function formatTemp(celsius: number): string {
   return `${Math.round(celsius)}°`;
 }
 
+export function formatElevation(meters: number): string {
+  return `${Math.round(meters).toLocaleString()} m`;
+}
+
+export function formatWind(kmh: number): string {
+  return `${Math.round(kmh)} km/h`;
+}
+
+/** "2026-07-12T05:12" -> "05:12"; "" when the input is too short to hold a time. */
+export function formatClock(iso: string): string {
+  return iso.length >= 16 ? iso.slice(11, 16) : '';
+}
+
+/** UV plain-language band (WHO scale). */
+export function uvBand(uv: number): string {
+  if (uv < 3) return 'Low';
+  if (uv < 6) return 'Moderate';
+  if (uv < 8) return 'High';
+  if (uv < 11) return 'Very high';
+  return 'Extreme';
+}
+
 /** "Today", "Tomorrow", or a short weekday name ("Sat"). */
 export function dayLabel(isoDate: string, now = new Date()): string {
   if (isoDate === toLocalIsoDate(now)) return 'Today';

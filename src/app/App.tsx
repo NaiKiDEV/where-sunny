@@ -6,12 +6,14 @@ import { WeatherLayerControl } from '../components/widgets/WeatherLayerControl';
 import { WelcomeOverlay } from '../components/widgets/WelcomeOverlay';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePinnedPlaces } from '../hooks/usePinnedPlaces';
+import { useSharedTrip } from '../hooks/useSharedTrip';
 import { useSunnyPlaces } from '../hooks/useSunnyPlaces';
 import { useAppStore } from '../state/store';
 
 export default function App() {
   const origin = useAppStore((s) => s.origin);
   const isMobile = useIsMobile();
+  useSharedTrip();
   const { results, home, isLoading, isFetching, error } = useSunnyPlaces();
   const { pinnedScored, isLoading: isPinsLoading } = usePinnedPlaces();
   const busy = isFetching || isPinsLoading;
