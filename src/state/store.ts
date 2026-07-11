@@ -9,11 +9,19 @@ export const MAX_PINS = 12;
 /** 'origin' = pick a starting point; 'explore' = add a place of interest. */
 export type SearchMode = 'origin' | 'explore';
 
+/** Map weather wash: off, a sunshine field, or a cloud-&-rain field. */
+export type OverlayMode = 'off' | 'sun' | 'rain';
+
+/** How the wash renders: a per-point soft glow, or an interpolated filled field. */
+export type OverlayStyle = 'glow' | 'field';
+
 interface AppState {
   origin: Origin | null;
   tier: TierId;
   timeWindow: WindowId;
   comfort: ComfortPrefs;
+  overlay: OverlayMode;
+  overlayStyle: OverlayStyle;
   pinned: Place[];
   selectedPlaceKey: string | null;
   /** A searched destination shown in detail without committing (not pinned, not origin). */
@@ -23,6 +31,8 @@ interface AppState {
   setTier: (tier: TierId) => void;
   setTimeWindow: (timeWindow: WindowId) => void;
   setComfort: (comfort: ComfortPrefs) => void;
+  setOverlay: (overlay: OverlayMode) => void;
+  setOverlayStyle: (style: OverlayStyle) => void;
   addPin: (place: Place) => void;
   removePin: (key: string) => void;
   selectPlace: (key: string | null) => void;
@@ -40,6 +50,8 @@ export const useAppStore = create<AppState>()(
       tier: 'day',
       timeWindow: 'today',
       comfort: DEFAULT_COMFORT,
+      overlay: 'off',
+      overlayStyle: 'field',
       pinned: [],
       selectedPlaceKey: null,
       previewPlace: null,
@@ -49,6 +61,8 @@ export const useAppStore = create<AppState>()(
       setTier: (tier) => set({ tier, selectedPlaceKey: null }),
       setTimeWindow: (timeWindow) => set({ timeWindow, selectedPlaceKey: null }),
       setComfort: (comfort) => set({ comfort }),
+      setOverlay: (overlay) => set({ overlay }),
+      setOverlayStyle: (overlayStyle) => set({ overlayStyle }),
       addPin: (place) =>
         set((state) => {
           if (state.pinned.some((p) => p.key === place.key) || state.pinned.length >= MAX_PINS) {
@@ -79,6 +93,8 @@ export const useAppStore = create<AppState>()(
         tier: state.tier,
         timeWindow: state.timeWindow,
         comfort: state.comfort,
+        overlay: state.overlay,
+        overlayStyle: state.overlayStyle,
         pinned: state.pinned,
       }),
     },

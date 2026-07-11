@@ -8,6 +8,7 @@ import {
   addMapLayers,
   fitToRadius,
   PLACE_CIRCLES_LAYER,
+  updateOverlay,
   updatePlaces,
   updateRadius,
   type FitPadding,
@@ -37,6 +38,8 @@ export function MapView({ results, pinned }: MapViewProps) {
   const origin = useAppStore((s) => s.origin);
   const tier = useAppStore((s) => s.tier);
   const selectedPlaceKey = useAppStore((s) => s.selectedPlaceKey);
+  const overlay = useAppStore((s) => s.overlay);
+  const overlayStyle = useAppStore((s) => s.overlayStyle);
   const isMobile = useIsMobile();
 
   const fitPadding: FitPadding = isMobile
@@ -86,6 +89,11 @@ export function MapView({ results, pinned }: MapViewProps) {
   useEffect(() => {
     if (isMapReady && mapRef.current) updatePlaces(mapRef.current, results, pinned, selectedPlaceKey);
   }, [isMapReady, results, pinned, selectedPlaceKey]);
+
+  // weather wash reflects the chosen mode + style, rebuilt from current data
+  useEffect(() => {
+    if (isMapReady && mapRef.current) updateOverlay(mapRef.current, results, pinned, overlay, overlayStyle);
+  }, [isMapReady, results, pinned, overlay, overlayStyle]);
 
   // origin marker, radius ring, and camera follow origin + tier
   useEffect(() => {

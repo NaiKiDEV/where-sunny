@@ -193,6 +193,68 @@
   color: var(--color-ink-faint);
 }
 
+.menu-item.is-active {
+  background: var(--color-sun-100);
+}
+
+.menu-item.is-active .menu-item-label {
+  color: var(--color-sun-700);
+}
+
+.menu-popover-title {
+  padding: var(--space-1) var(--space-3) var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-faint);
+}
+
+/* ============ weather layer control ============ */
+.layer-control {
+  position: absolute;
+  top: calc(var(--space-3) + var(--safe-top));
+  right: var(--space-3);
+  z-index: var(--z-controls);
+}
+
+/* Lift above the results drawer while the picker is open. */
+.layer-control:has(.menu-popover) {
+  z-index: var(--z-overlay);
+}
+
+.layer-control-trigger.is-active {
+  color: var(--color-sun-700);
+  background: var(--color-sun-100);
+  box-shadow: var(--shadow-chip), inset 0 0 0 1.5px var(--color-sun-500);
+}
+
+.layer-popover {
+  left: auto;
+  right: 0;
+}
+
+.layer-style {
+  margin-top: var(--space-1);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--color-line);
+}
+
+.layer-style .segmented {
+  display: flex;
+  width: 100%;
+  margin-top: var(--space-1);
+  background: var(--color-sun-100);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.layer-style .segmented-option {
+  flex: 1;
+  text-align: center;
+}
+
 /* ============ segmented control ============ */
 .segmented {
   display: inline-flex;

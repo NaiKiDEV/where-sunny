@@ -2,6 +2,7 @@ import { MapView } from '../components/map/MapView';
 import { ResultsPanel } from '../components/panel/ResultsPanel';
 import { SearchDialog } from '../components/widgets/SearchDialog';
 import { LocationBar, TopControls } from '../components/widgets/TopControls';
+import { WeatherLayerControl } from '../components/widgets/WeatherLayerControl';
 import { WelcomeOverlay } from '../components/widgets/WelcomeOverlay';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePinnedPlaces } from '../hooks/usePinnedPlaces';
@@ -28,6 +29,7 @@ export default function App() {
           ) : (
             <TopControls isFetching={busy} />
           )}
+          <WeatherLayerControl />
           <ResultsPanel
             results={results}
             pinnedScored={pinnedScored}
