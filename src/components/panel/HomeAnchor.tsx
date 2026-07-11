@@ -10,7 +10,7 @@ function verdict(home: ScoredPlace, best: ScoredPlace | null): string {
   if (!best || best.place.key === home.place.key) return 'This is the sunniest spot around.';
   const delta = best.score - home.score;
   if (home.score >= GREAT_AT_HOME && delta < WORTH_THE_TRIP_DELTA) {
-    return 'Gorgeous right here — no need to go anywhere.';
+    return 'Gorgeous right here - no need to go anywhere.';
   }
   if (delta >= WORTH_THE_TRIP_DELTA) {
     return `${best.place.name} beats staying put by +${delta}. Worth the trip.`;

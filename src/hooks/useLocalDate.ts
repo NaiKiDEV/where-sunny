@@ -5,7 +5,7 @@ const CLOCK_CHECK_MS = 30_000;
 
 /**
  * The current local calendar date (YYYY-MM-DD), updating when the day rolls
- * over — including after the device sleeps and the tab becomes visible again.
+ * over - including after the device sleeps and the tab becomes visible again.
  * Components only re-render when the date string actually changes.
  */
 export function useLocalDate(): string {

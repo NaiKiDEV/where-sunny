@@ -9,7 +9,7 @@ type GeolocationStatus = 'idle' | 'locating' | 'error';
 function describeError(err: GeolocationPositionError): string {
   switch (err.code) {
     case err.PERMISSION_DENIED:
-      return 'Location permission was denied — search for a city instead.';
+      return 'Location permission was denied - search for a city instead.';
     case err.POSITION_UNAVAILABLE:
       return 'Could not determine your location. Try searching for a city.';
     default:
@@ -24,7 +24,7 @@ export function useGeolocation() {
 
   const locate = useCallback(() => {
     if (!('geolocation' in navigator)) {
-      setError('Geolocation is not supported by this browser — search for a city instead.');
+      setError('Geolocation is not supported by this browser - search for a city instead.');
       setStatus('error');
       return;
     }

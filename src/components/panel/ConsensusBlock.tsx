@@ -2,9 +2,9 @@ import type { DayConsensus } from '../../core/scoring/consensus';
 import { scoreColor } from '../../lib/scoreColor';
 
 const LEVEL_TEXT = {
-  high: { label: 'Models agree', hint: 'Independent forecasts point the same way — plan on it.' },
-  medium: { label: 'Some spread', hint: 'Forecast models differ a bit — check again closer to the day.' },
-  low: { label: 'Models disagree', hint: 'Forecasts genuinely conflict here — treat any single one with caution.' },
+  high: { label: 'Models agree', hint: 'Independent forecasts point the same way - plan on it.' },
+  medium: { label: 'Some spread', hint: 'Forecast models differ a bit - check again closer to the day.' },
+  low: { label: 'Models disagree', hint: 'Forecasts genuinely conflict here - treat any single one with caution.' },
 } as const;
 
 /**

@@ -1,3 +1,4 @@
+import { Sun } from 'lucide-react';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useAppStore } from '../../state/store';
 
@@ -8,12 +9,10 @@ export function WelcomeOverlay() {
   return (
     <div className="welcome-overlay">
       <div className="welcome-card">
-        <span className="welcome-mark" aria-hidden>
-          ☀️
-        </span>
+        <Sun className="welcome-mark" size={56} strokeWidth={2} aria-hidden />
         <h1 className="welcome-title">Where Sunny?</h1>
         <p className="welcome-tagline">
-          Find where the sun is actually shining — nearby, a day trip, or a flight away.
+          Find where the sun is actually shining - nearby, a day trip, or a flight away.
         </p>
         <div className="welcome-actions">
           <button type="button" className="button-primary" onClick={locate} disabled={status === 'locating'}>

@@ -18,7 +18,7 @@ export interface ScoreBreakdown {
   parts: ScorePart[];
   /** Same value scoreDay returns. */
   score: number;
-  /** Unclamped float sum — negative on truly miserable days. */
+  /** Unclamped float sum - negative on truly miserable days. */
   raw: number;
   /** True when raw < 0: the score bottomed out at 0 and parts exceed it. */
   isCapped: boolean;
@@ -29,7 +29,7 @@ export interface ScoreBreakdown {
 /**
  * Decompose scoreDay's exact formula into user-facing point contributions.
  * Rounding uses the largest-remainder method so the displayed parts always
- * add up to the displayed score — a receipt that doesn't sum reads as broken.
+ * add up to the displayed score - a receipt that doesn't sum reads as broken.
  */
 export function explainScore(day: DayForecast, prefs: ComfortPrefs = DEFAULT_COMFORT): ScoreBreakdown {
   const sunshineRatio =

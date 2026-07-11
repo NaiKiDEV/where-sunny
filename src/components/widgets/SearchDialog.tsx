@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { MapPin, Star } from 'lucide-react';
 import type { Place } from '../../core/types';
 import type { GeoMatch } from '../../core/weather/geocoding';
 import { searchPlaces } from '../../core/weather/geocoding';
@@ -29,6 +30,7 @@ export function SearchDialog() {
   const addPin = useAppStore((s) => s.addPin);
   const removePin = useAppStore((s) => s.removePin);
   const selectPlace = useAppStore((s) => s.selectPlace);
+  const setPreviewPlace = useAppStore((s) => s.setPreviewPlace);
   const { locate, status: geoStatus, error: geoError } = useGeolocation();
 
   const [query, setQuery] = useState('');
@@ -63,7 +65,7 @@ export function SearchDialog() {
         const found = await searchPlaces(trimmed);
         if (!cancelled) setMatches(found);
       } catch {
-        if (!cancelled) setSearchError('Search failed — check your connection.');
+        if (!cancelled) setSearchError('Search failed - check your connection.');
       } finally {
         if (!cancelled) setSearching(false);
       }
@@ -90,9 +92,10 @@ export function SearchDialog() {
       setOrigin({ lat: match.lat, lon: match.lon, label: match.name });
     } else {
       const place = matchToPlace(match);
-      if (!pinnedKeys.has(place.key) && isPinLimitReached) return;
-      addPin(place);
-      selectPlace(place.key);
+      // A watched place already has a cached forecast - jump straight to it.
+      // Anything else opens as a preview: full details, nothing committed yet.
+      if (pinnedKeys.has(place.key)) selectPlace(place.key);
+      else setPreviewPlace(place);
       closeSearch();
     }
     setQuery('');
@@ -114,7 +117,7 @@ export function SearchDialog() {
         onClick={(e) => e.stopPropagation()}
       >
         <h2 className="search-title">
-          {searchMode === 'origin' ? 'Where are you starting from?' : 'Watch a place'}
+          {searchMode === 'origin' ? 'Where are you starting from?' : 'Explore a destination'}
         </h2>
         <input
           ref={inputRef}
@@ -126,13 +129,14 @@ export function SearchDialog() {
         />
         {searchMode === 'origin' && (
           <button type="button" className="search-locate" onClick={locate} disabled={geoStatus === 'locating'}>
-            📍 {geoStatus === 'locating' ? 'Locating…' : 'Use my location'}
+            <MapPin size={15} aria-hidden /> {geoStatus === 'locating' ? 'Locating…' : 'Use my location'}
           </button>
         )}
         {searchMode === 'explore' && (
           <p className="search-hint">
-            Watched places always show their forecast — even tiny villages far outside your travel range.
-            {isPinLimitReached && ` Limit of ${MAX_PINS} reached — remove one first.`}
+            Tap any place to see its full forecast, then watch it or start there. Works for tiny
+            villages far outside your travel range too.
+            {isPinLimitReached && ` You're watching ${MAX_PINS} places - the max.`}
           </p>
         )}
         {geoError && <p className="search-error">{geoError}</p>}
@@ -149,7 +153,7 @@ export function SearchDialog() {
                   </span>
                   <span className="search-result-meta">
                     {[match.admin1, match.country].filter(Boolean).join(', ')}
-                    {searchMode === 'origin' ? ' · tap to start here' : ' · tap to watch'}
+                    {searchMode === 'origin' ? ' · tap to start here' : ' · tap for details'}
                   </span>
                 </button>
                 <button
@@ -159,7 +163,7 @@ export function SearchDialog() {
                   disabled={!isPinned && isPinLimitReached}
                   onClick={() => togglePin(match)}
                 >
-                  {isPinned ? '★' : '☆'}
+                  <Star size={18} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
                 </button>
               </li>
             );

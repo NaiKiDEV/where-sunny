@@ -19,7 +19,7 @@ const ORIGIN_GRID_STEP = 0.01;
 
 /**
  * Forecasts are zipped to candidates by array position, so the cache entry
- * must be bound to the exact candidate set it was fetched for — a city
+ * must be bound to the exact candidate set it was fetched for - a city
  * dataset update between visits would otherwise misalign persisted forecasts
  * against freshly computed candidates.
  */

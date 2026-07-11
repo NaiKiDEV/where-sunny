@@ -27,7 +27,7 @@ const WEEKEND = ['2026-07-11', '2026-07-12'];
 describe('scorePlace', () => {
   it('picks the best day within the window and reports its date', () => {
     const forecast = [
-      forecastDay('2026-07-10', 1), // outside window — must be ignored
+      forecastDay('2026-07-10', 1), // outside window - must be ignored
       forecastDay('2026-07-11', 0.3),
       forecastDay('2026-07-12', 0.9),
     ];

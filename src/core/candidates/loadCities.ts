@@ -16,7 +16,7 @@ function isCityDataset(value: unknown): value is CityDataset {
 
 export function parseCityDataset(json: unknown): Place[] {
   if (!isCityDataset(json)) {
-    throw new Error('Invalid city dataset — regenerate with `pnpm setup:data`');
+    throw new Error('Invalid city dataset - regenerate with `pnpm setup:data`');
   }
   const places: Place[] = [];
   for (let i = 0; i < json.rows.length; i++) {

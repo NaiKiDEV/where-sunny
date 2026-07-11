@@ -26,7 +26,7 @@ function addDays(date: Date, days: number): Date {
 /**
  * Local calendar dates (YYYY-MM-DD) covered by a time window. All dates fall
  * within the 7-day forecast horizon, so one forecast fetch serves every
- * window. "Weekend" means the upcoming Sat+Sun — or what's left of it: on
+ * window. "Weekend" means the upcoming Sat+Sun - or what's left of it: on
  * Saturday it's Sat+Sun, on Sunday just Sunday.
  */
 export function windowDates(windowId: WindowId, now = new Date()): string[] {

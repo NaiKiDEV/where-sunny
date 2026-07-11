@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Star } from 'lucide-react';
 import type { ScoredPlace } from '../../core/types';
 import { TRAVEL_TIERS } from '../../core/candidates/tiers';
 import { useAppStore } from '../../state/store';
@@ -34,7 +35,7 @@ function DimRangeHint({ tier }: { tier: string }) {
   if (tier === 'flight') {
     return (
       <div className="dim-hint">
-        Not much sun anywhere in reach right now —{' '}
+        Not much sun anywhere in reach right now -{' '}
         <button type="button" className="dim-hint-action" onClick={() => setTimeWindow('week')}>
           check the next 7 days
         </button>
@@ -45,7 +46,7 @@ function DimRangeHint({ tier }: { tier: string }) {
   const nextTier = tier === 'nearby' ? 'day' : tier === 'day' ? 'getaway' : 'flight';
   return (
     <div className="dim-hint">
-      Not much sun in this range —{' '}
+      Not much sun in this range -{' '}
       <button type="button" className="dim-hint-action" onClick={() => setTier(nextTier)}>
         try {TRAVEL_TIERS[nextTier].label}
       </button>{' '}
@@ -65,7 +66,7 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
   const hasPins = pinnedScored.length > 0;
   const [showAll, setShowAll] = useState(false);
 
-  // A watched city already shows under Interests — don't list it twice.
+  // A watched city already shows under Interests - don't list it twice.
   const pinnedKeys = new Set(pinned.map((p) => p.key));
   const rangeResults = results.filter((s) => !pinnedKeys.has(`p:${s.place.key}`));
   const visibleResults = showAll ? rangeResults : rangeResults.slice(0, SHORTLIST_LIMIT);
@@ -76,7 +77,7 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
       <div className="panel-message" role="alert">
         <strong>Couldn't load forecasts.</strong>
         <p>{error.message}</p>
-        <p className="panel-message-hint">Check your connection — results refresh automatically.</p>
+        <p className="panel-message-hint">Check your connection - results refresh automatically.</p>
       </div>
     );
   }
@@ -92,7 +93,7 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
       <div className="section-header">
         <span className="section-title">Interests</span>
         <button type="button" className="section-action" onClick={() => openSearch('explore')}>
-          ☆ Watch a place
+          <Star size={14} strokeWidth={2} aria-hidden /> Watch a place
         </button>
       </div>
       {hasPins && (
@@ -111,7 +112,7 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
       {rangeResults.length === 0 ? (
         <div className="panel-message">
           <strong>No places found in this range.</strong>
-          <p>Try a wider travel range — or a different starting point.</p>
+          <p>Try a wider travel range - or a different starting point.</p>
         </div>
       ) : (
         <>

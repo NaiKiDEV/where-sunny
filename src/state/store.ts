@@ -16,6 +16,8 @@ interface AppState {
   comfort: ComfortPrefs;
   pinned: Place[];
   selectedPlaceKey: string | null;
+  /** A searched destination shown in detail without committing (not pinned, not origin). */
+  previewPlace: Place | null;
   searchMode: SearchMode | null; // null = search closed
   setOrigin: (origin: Origin) => void;
   setTier: (tier: TierId) => void;
@@ -24,6 +26,9 @@ interface AppState {
   addPin: (place: Place) => void;
   removePin: (key: string) => void;
   selectPlace: (key: string | null) => void;
+  setPreviewPlace: (place: Place) => void;
+  /** Dismiss whichever detail is open (selected or preview) and return to the list. */
+  closeDetail: () => void;
   openSearch: (mode: SearchMode) => void;
   closeSearch: () => void;
 }
@@ -37,8 +42,10 @@ export const useAppStore = create<AppState>()(
       comfort: DEFAULT_COMFORT,
       pinned: [],
       selectedPlaceKey: null,
+      previewPlace: null,
       searchMode: null,
-      setOrigin: (origin) => set({ origin, selectedPlaceKey: null, searchMode: null }),
+      setOrigin: (origin) =>
+        set({ origin, selectedPlaceKey: null, previewPlace: null, searchMode: null }),
       setTier: (tier) => set({ tier, selectedPlaceKey: null }),
       setTimeWindow: (timeWindow) => set({ timeWindow, selectedPlaceKey: null }),
       setComfort: (comfort) => set({ comfort }),
@@ -57,7 +64,10 @@ export const useAppStore = create<AppState>()(
             selectedPlaceKey: state.selectedPlaceKey === key ? null : state.selectedPlaceKey,
           };
         }),
-      selectPlace: (selectedPlaceKey) => set({ selectedPlaceKey }),
+      selectPlace: (selectedPlaceKey) => set({ selectedPlaceKey, previewPlace: null }),
+      setPreviewPlace: (previewPlace) =>
+        set({ previewPlace, selectedPlaceKey: null, searchMode: null }),
+      closeDetail: () => set({ selectedPlaceKey: null, previewPlace: null }),
       openSearch: (searchMode) => set({ searchMode }),
       closeSearch: () => set({ searchMode: null }),
     }),

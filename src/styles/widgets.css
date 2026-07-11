@@ -39,19 +39,26 @@
 .top-controls button,
 .top-controls .segmented,
 .top-controls .comfort-backdrop,
-.top-controls .comfort-popover {
+.top-controls .comfort-popover,
+.top-controls .menu-backdrop,
+.top-controls .menu-popover {
   pointer-events: auto;
 }
 
-/* While the comfort popover is open, lift the controls above the results
-   drawer (--z-panel); child z-indexes can't escape this stacking context. */
-.top-controls:has(.comfort-popover) {
+/* While a popover is open, lift the controls above the results drawer
+   (--z-panel); child z-indexes can't escape this stacking context. */
+.top-controls:has(.comfort-popover),
+.top-controls:has(.menu-popover) {
   z-index: var(--z-overlay);
 }
 
 .location-chip {
   display: inline-flex;
   align-items: center;
+  /* line-height:1 collapses the text line box to the glyph height so
+     align-items:center lines the icons up with the visible text, not with the
+     taller leading box. */
+  line-height: 1;
   gap: var(--space-2);
   padding: 9px 16px;
   border-radius: var(--radius-pill);
@@ -69,15 +76,26 @@
   box-shadow: var(--shadow-soft);
 }
 
+.location-chip-icon {
+  flex-shrink: 0;
+  color: var(--color-sun-600);
+}
+
 .location-chip-label {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  /* The row uses line-height:1 to seat the icons against the visible text, but
+     that tight line box would let overflow:hidden clip descenders (g, y, p).
+     Pad the clip box and cancel it with an equal negative margin so glyphs stay
+     whole while the flex row height - and thus the icon centering - is unchanged. */
+  padding-block: 3px;
+  margin-block: -3px;
 }
 
 .location-chip-caret {
+  flex-shrink: 0;
   color: var(--color-ink-faint);
-  font-size: var(--text-xs);
 }
 
 .fetch-hint {
@@ -87,6 +105,92 @@
   padding: 5px 10px;
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-chip);
+}
+
+/* ============ location action menu ============ */
+.location-menu {
+  position: relative;
+  min-width: 0;
+}
+
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-veil);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-chip);
+  font-size: var(--text-base);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.icon-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+}
+
+.menu-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+}
+
+.menu-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  left: 0;
+  z-index: 2;
+  width: min(280px, 78vw);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  transition: background 120ms ease;
+}
+
+.menu-item:hover {
+  background: var(--color-sun-100);
+}
+
+.menu-item-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-sun-700);
+}
+
+.menu-item-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.menu-item-label {
+  font-weight: 650;
+  font-size: var(--text-sm);
+}
+
+.menu-item-hint {
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
 }
 
 /* ============ segmented control ============ */
@@ -168,6 +272,10 @@
 
 .search-locate {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  gap: 6px;
   font-weight: 600;
   font-size: var(--text-sm);
   color: var(--color-sun-700);
@@ -246,7 +354,7 @@
 }
 
 .welcome-mark {
-  font-size: 3rem;
+  color: var(--color-sun-500);
   filter: drop-shadow(0 6px 16px rgba(231, 149, 20, 0.45));
 }
 
@@ -294,6 +402,10 @@
 }
 
 .comfort-trigger-label {
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
+  gap: 5px;
   white-space: nowrap;
 }
 

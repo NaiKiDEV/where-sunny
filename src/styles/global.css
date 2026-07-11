@@ -19,6 +19,15 @@ body {
   overscroll-behavior: none;
 }
 
+/* lucide renders inline <svg>. Inline SVGs sit on the text baseline and reserve
+   descender whitespace, which throws icon+text pairs out of alignment. Making
+   them block-level removes that gap; in flex rows they become clean flex items
+   that align_items:center can center predictably. They must never shrink. */
+svg.lucide {
+  display: block;
+  flex-shrink: 0;
+}
+
 button {
   font: inherit;
   color: inherit;

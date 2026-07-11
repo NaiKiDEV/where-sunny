@@ -1,14 +1,15 @@
+import { Cloud, CloudRain, Sun, Thermometer, type LucideIcon } from 'lucide-react';
 import { explainScore, type ScorePart } from '../../core/scoring/explain';
 import type { ScoredDay } from '../../core/types';
 import { formatSunHours, formatTemp } from '../../lib/format';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useAppStore } from '../../state/store';
 
-const PART_META: Record<ScorePart['id'], { label: string; icon: string; barClass: string }> = {
-  sun: { label: 'Sunshine', icon: '☀️', barClass: 'breakdown-bar-sun' },
-  warmth: { label: 'Warmth', icon: '🌡️', barClass: 'breakdown-bar-warmth' },
-  cloud: { label: 'Clouds', icon: '☁️', barClass: 'breakdown-bar-cloud' },
-  rain: { label: 'Rain risk', icon: '🌧️', barClass: 'breakdown-bar-rain' },
+const PART_META: Record<ScorePart['id'], { label: string; Icon: LucideIcon; barClass: string }> = {
+  sun: { label: 'Sunshine', Icon: Sun, barClass: 'breakdown-bar-sun' },
+  warmth: { label: 'Warmth', Icon: Thermometer, barClass: 'breakdown-bar-warmth' },
+  cloud: { label: 'Clouds', Icon: Cloud, barClass: 'breakdown-bar-cloud' },
+  rain: { label: 'Rain risk', Icon: CloudRain, barClass: 'breakdown-bar-rain' },
 };
 
 function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, idealMax: number): string {
@@ -17,9 +18,9 @@ function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, ideal
       return `${formatSunHours(day.sunshineDuration)} of ${formatSunHours(day.daylightDuration)} daylight`;
     case 'warmth': {
       const temp = formatTemp(day.tempMax);
-      if (day.tempMax < idealMin) return `${temp} — cooler than your ${idealMin}–${idealMax}° zone`;
-      if (day.tempMax > idealMax) return `${temp} — hotter than your ${idealMin}–${idealMax}° zone`;
-      return `${temp} — in your comfort zone`;
+      if (day.tempMax < idealMin) return `${temp} - cooler than your ${idealMin}–${idealMax}° zone`;
+      if (day.tempMax > idealMax) return `${temp} - hotter than your ${idealMin}–${idealMax}° zone`;
+      return `${temp} - in your comfort zone`;
     }
     case 'cloud':
       return `${Math.round(day.cloudCoverMean)}% average cover`;
@@ -49,7 +50,7 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
           return (
             <div key={part.id} className="breakdown-row">
               <span className="breakdown-icon" aria-hidden>
-                {meta.icon}
+                <meta.Icon size={17} strokeWidth={2} />
               </span>
               <span className="breakdown-body">
                 <span className="breakdown-row-head">
@@ -72,7 +73,7 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
       </div>
       {breakdown.isCapped && (
         <p className="breakdown-capped">
-          Penalties outweigh everything the day offers — the score bottoms out at 0.
+          Penalties outweigh everything the day offers - the score bottoms out at 0.
         </p>
       )}
     </div>

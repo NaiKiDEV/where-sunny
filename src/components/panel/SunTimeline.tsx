@@ -23,7 +23,7 @@ function formatHour(hour: number): string {
 /**
  * 24 hour cells: night is dark, day blends gray→gold by clearness, rain gets a
  * blue underline. Tap or drag across the bar (or hover on desktop) to read any
- * hour's cloud, rain, and temperature — the hover-only tooltip left touch users
+ * hour's cloud, rain, and temperature - the hover-only tooltip left touch users
  * with no way to see the hourly breakdown.
  */
 export function SunTimeline({ hours }: { hours: HourPoint[] }) {

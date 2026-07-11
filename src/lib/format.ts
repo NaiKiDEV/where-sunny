@@ -34,30 +34,26 @@ export function countryFlag(countryCode: string): string {
     .join('');
 }
 
-interface WeatherDescription {
-  emoji: string;
-  label: string;
-}
-
-const WEATHER_CODES: [Set<number>, WeatherDescription][] = [
-  [new Set([0]), { emoji: '☀️', label: 'Clear sky' }],
-  [new Set([1]), { emoji: '🌤️', label: 'Mostly clear' }],
-  [new Set([2]), { emoji: '⛅', label: 'Partly cloudy' }],
-  [new Set([3]), { emoji: '☁️', label: 'Overcast' }],
-  [new Set([45, 48]), { emoji: '🌫️', label: 'Fog' }],
-  [new Set([51, 53, 55, 56, 57]), { emoji: '🌦️', label: 'Drizzle' }],
-  [new Set([61, 63, 65, 66, 67]), { emoji: '🌧️', label: 'Rain' }],
-  [new Set([71, 73, 75, 77]), { emoji: '🌨️', label: 'Snow' }],
-  [new Set([80, 81, 82]), { emoji: '🌧️', label: 'Rain showers' }],
-  [new Set([85, 86]), { emoji: '🌨️', label: 'Snow showers' }],
-  [new Set([95, 96, 99]), { emoji: '⛈️', label: 'Thunderstorm' }],
+const WEATHER_LABELS: [Set<number>, string][] = [
+  [new Set([0]), 'Clear sky'],
+  [new Set([1]), 'Mostly clear'],
+  [new Set([2]), 'Partly cloudy'],
+  [new Set([3]), 'Overcast'],
+  [new Set([45, 48]), 'Fog'],
+  [new Set([51, 53, 55, 56, 57]), 'Drizzle'],
+  [new Set([61, 63, 65, 66, 67]), 'Rain'],
+  [new Set([71, 73, 75, 77]), 'Snow'],
+  [new Set([80, 81, 82]), 'Rain showers'],
+  [new Set([85, 86]), 'Snow showers'],
+  [new Set([95, 96, 99]), 'Thunderstorm'],
 ];
 
-export function describeWeather(code: number): WeatherDescription {
-  for (const [codes, description] of WEATHER_CODES) {
-    if (codes.has(code)) return description;
+/** Human label for a WMO weather code. See weatherVisual() for the matching icon. */
+export function describeWeather(code: number): string {
+  for (const [codes, label] of WEATHER_LABELS) {
+    if (codes.has(code)) return label;
   }
-  return { emoji: '☁️', label: 'Cloudy' };
+  return 'Cloudy';
 }
 
 export function directionsUrl(lat: number, lon: number): string {

@@ -15,7 +15,7 @@ export interface PinnedPlacesResult {
 
 /**
  * Forecasts + scores for the user's places of interest. Pins are independent
- * of tier/radius — they always get data, no matter how niche or far away.
+ * of tier/radius - they always get data, no matter how niche or far away.
  */
 export function usePinnedPlaces(): PinnedPlacesResult {
   const pinned = useAppStore((s) => s.pinned);

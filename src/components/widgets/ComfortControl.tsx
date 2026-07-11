@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Thermometer } from 'lucide-react';
 import { COMFORT_PRESETS } from '../../core/scoring/score';
 import { useAppStore } from '../../state/store';
 
@@ -20,7 +21,9 @@ export function ComfortControl() {
         aria-expanded={isOpen}
         onClick={() => setOpen((v) => !v)}
       >
-        <span className="segmented-option is-active comfort-trigger-label">🌡 {active.label}</span>
+        <span className="segmented-option is-active comfort-trigger-label">
+          <Thermometer size={14} strokeWidth={2} aria-hidden /> {active.label}
+        </span>
       </button>
       {isOpen && (
         <>
@@ -41,7 +44,7 @@ export function ComfortControl() {
                 {preset.id === 'any' && <span className="comfort-option-hint">sun only, ignore temp</span>}
               </button>
             ))}
-            <p className="comfort-popover-hint">Scores re-rank instantly — no refetch needed.</p>
+            <p className="comfort-popover-hint">Scores re-rank instantly - no refetch needed.</p>
           </div>
         </>
       )}

@@ -43,7 +43,7 @@ export function MapView({ results, pinned }: MapViewProps) {
     ? { top: 130, bottom: Math.round(window.innerHeight * 0.28), left: 36, right: 36 }
     : { top: 110, bottom: 60, left: 460, right: 70 };
 
-  // map lifecycle — init once
+  // map lifecycle - init once
   useEffect(() => {
     if (!containerRef.current) return;
     const startOrigin = useAppStore.getState().origin;

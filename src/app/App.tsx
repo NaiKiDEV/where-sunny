@@ -1,7 +1,7 @@
 import { MapView } from '../components/map/MapView';
 import { ResultsPanel } from '../components/panel/ResultsPanel';
 import { SearchDialog } from '../components/widgets/SearchDialog';
-import { LocationChip, TopControls } from '../components/widgets/TopControls';
+import { LocationBar, TopControls } from '../components/widgets/TopControls';
 import { WelcomeOverlay } from '../components/widgets/WelcomeOverlay';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePinnedPlaces } from '../hooks/usePinnedPlaces';
@@ -20,10 +20,10 @@ export default function App() {
       <MapView results={results} pinned={pinnedScored} />
       {origin ? (
         <>
-          {/* Mobile keeps only the location chip afloat; filters live in the drawer header. */}
+          {/* Mobile keeps only the location bar afloat; filters live in the drawer header. */}
           {isMobile ? (
             <header className="top-controls">
-              <LocationChip isFetching={busy} />
+              <LocationBar isFetching={busy} />
             </header>
           ) : (
             <TopControls isFetching={busy} />

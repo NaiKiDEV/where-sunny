@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronLeft, MapPin, Star } from 'lucide-react';
 import type { ScoredDay, ScoredPlace } from '../../core/types';
 import { usePlaceInsight } from '../../hooks/usePlaceInsight';
 import {
@@ -12,6 +13,7 @@ import {
 } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
 import { scoreWord } from '../../lib/scoreLabel';
+import { weatherVisual } from '../../lib/weatherIcon';
 import { useAppStore } from '../../state/store';
 import { ConsensusBlock } from './ConsensusBlock';
 import { ScoreBreakdown } from './ScoreBreakdown';
@@ -42,14 +44,16 @@ function DayChip({
 }
 
 export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
-  const selectPlace = useAppStore((s) => s.selectPlace);
+  const closeDetail = useAppStore((s) => s.closeDetail);
+  const setOrigin = useAppStore((s) => s.setOrigin);
   const pinned = useAppStore((s) => s.pinned);
   const addPin = useAppStore((s) => s.addPin);
   const removePin = useAppStore((s) => s.removePin);
 
   const [activeDate, setActiveDate] = useState(scored.best.date);
   const day = scored.days.find((d) => d.date === activeDate) ?? scored.best;
-  const weather = describeWeather(day.weatherCode);
+  const weatherLabel = describeWeather(day.weatherCode);
+  const { Icon: WeatherGlyph, color: weatherColor } = weatherVisual(day.weatherCode);
   const windowDates = new Set(scored.windowDays.map((d) => d.date));
 
   const insight = usePlaceInsight(scored.place);
@@ -69,11 +73,13 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
     }
   };
 
+  const startFromHere = () => setOrigin({ lat: place.lat, lon: place.lon, label: place.name });
+
   return (
     <div className="place-detail">
       <header className="place-detail-header">
-        <button type="button" className="back-button" onClick={() => selectPlace(null)}>
-          ‹ Back
+        <button type="button" className="back-button" onClick={closeDetail}>
+          <ChevronLeft size={16} aria-hidden /> Back
         </button>
         <div className="place-detail-header-actions">
           {!isHome && (
@@ -82,7 +88,8 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
               className={`pin-toggle pin-toggle-detail${isPinned ? ' is-pinned' : ''}`}
               onClick={togglePin}
             >
-              {isPinned ? '★ Watching' : '☆ Watch'}
+              <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
+              {isPinned ? 'Watching' : 'Watch'}
             </button>
           )}
           <span className="score-badge-stack">
@@ -119,11 +126,11 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
 
       <div className="day-stats">
         <div className="day-stats-headline">
-          <span className="day-stats-emoji" aria-hidden>
-            {weather.emoji}
+          <span className="day-stats-icon" aria-hidden>
+            <WeatherGlyph size={22} strokeWidth={2} color={weatherColor} />
           </span>
           <span>
-            {weather.label} · {dayLabel(day.date)}
+            {weatherLabel} · {dayLabel(day.date)}
           </span>
         </div>
         {insight.isLoadingHours ? (
@@ -133,7 +140,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
         ) : (
           <p className="sun-timeline-note">
             {insight.isHoursError
-              ? 'Hour-by-hour forecast is unavailable right now — try again shortly.'
+              ? 'Hour-by-hour forecast is unavailable right now - try again shortly.'
               : 'No hourly forecast for this day.'}
           </p>
         )}
@@ -164,14 +171,19 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
       <ConsensusBlock consensus={consensus} isLoading={insight.isLoadingConsensus} />
 
       {!isHome && (
-        <a
-          className="directions-link"
-          href={directionsUrl(place.lat, place.lon)}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Directions →
-        </a>
+        <div className="detail-actions">
+          <a
+            className="directions-link"
+            href={directionsUrl(place.lat, place.lon)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Directions →
+          </a>
+          <button type="button" className="detail-action-secondary" onClick={startFromHere}>
+            <MapPin size={15} aria-hidden /> Start from here
+          </button>
+        </div>
       )}
     </div>
   );

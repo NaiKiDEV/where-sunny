@@ -1,3 +1,4 @@
+import { Star } from 'lucide-react';
 import type { ScoredPlace } from '../../core/types';
 import { countryFlag, dayLabel, formatDistance, formatSunHours, formatTemp } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
@@ -18,7 +19,7 @@ export function PlaceCard({ scored, rank }: PlaceCardProps) {
     <li className="place-card-item">
       <button type="button" className="place-card" onClick={() => selectPlace(place.key)}>
         <span className={`place-rank${rank === undefined ? ' place-rank-pin' : ''}`}>
-          {rank === undefined ? '★' : rank}
+          {rank === undefined ? <Star size={14} strokeWidth={0} fill="currentColor" aria-hidden /> : rank}
         </span>
         <span className="place-card-body">
           <span className="place-name">
@@ -32,7 +33,7 @@ export function PlaceCard({ scored, rank }: PlaceCardProps) {
         <span
           className="score-badge"
           style={{ background: scoreColor(score), color: scoreTextColor(score) }}
-          title={`${score} — ${scoreWord(score)}`}
+          title={`${score} - ${scoreWord(score)}`}
           aria-label={`Sun score ${score}, ${scoreWord(score)}`}
         >
           {score}
