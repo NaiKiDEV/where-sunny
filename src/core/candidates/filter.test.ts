@@ -9,9 +9,10 @@ const ORIGIN = { lat: 54.687, lon: 25.28 }; // Vilnius
 // sorted by population desc, as the dataset guarantees
 const CITIES: Place[] = [
   { key: 'c0', kind: 'city', name: 'Warsaw', country: 'PL', lat: 52.23, lon: 21.01, population: 1_700_000 },
-  { key: 'c1', kind: 'city', name: 'Riga', country: 'LV', lat: 56.95, lon: 24.11, population: 600_000 },
-  { key: 'c2', kind: 'city', name: 'Kaunas', country: 'LT', lat: 54.897, lon: 23.89, population: 300_000 },
-  { key: 'c3', kind: 'city', name: 'Trakai', country: 'LT', lat: 54.638, lon: 24.934, population: 4_500 },
+  { key: 'c1', kind: 'city', name: 'Minsk', country: 'BY', lat: 53.9, lon: 27.57, population: 800_000 },
+  { key: 'c2', kind: 'city', name: 'Riga', country: 'LV', lat: 56.95, lon: 24.11, population: 600_000 },
+  { key: 'c3', kind: 'city', name: 'Kaunas', country: 'LT', lat: 54.897, lon: 23.89, population: 300_000 },
+  { key: 'c4', kind: 'city', name: 'Trakai', country: 'LT', lat: 54.638, lon: 24.934, population: 4_500 },
 ];
 
 describe('selectCandidates', () => {
@@ -24,8 +25,15 @@ describe('selectCandidates', () => {
 
   it('day tier applies both radius and population floor', () => {
     const result = selectCandidates(CITIES, ORIGIN, TRAVEL_TIERS.day);
-    // Warsaw ~390 km (too far), Trakai pop < 5000 (too small)
+    // Warsaw ~390 km (too far), Minsk banned (BY), Trakai pop < 5000 (too small)
     expect(result.map((c) => c.place.name)).toEqual(['Riga', 'Kaunas']);
+  });
+
+  it('never yields a candidate in a banned country', () => {
+    // Minsk (BY) is in range and above the floor, yet must be excluded.
+    const result = selectCandidates(CITIES, ORIGIN, TRAVEL_TIERS.day);
+    expect(result.some((c) => c.place.name === 'Minsk')).toBe(false);
+    expect(result.some((c) => c.place.country === 'BY')).toBe(false);
   });
 
   it('respects the candidate cap, keeping the biggest places', () => {

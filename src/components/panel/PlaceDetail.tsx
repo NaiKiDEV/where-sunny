@@ -12,24 +12,29 @@ import {
   formatElevation,
   formatSunHours,
   formatTemp,
+  formatTempBare,
   formatWind,
+  type TempUnit,
   uvBand,
 } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
 import { scoreWord } from '../../lib/scoreLabel';
 import { weatherVisual } from '../../lib/weatherIcon';
 import { useAppStore } from '../../state/store';
+import { FlightLinks } from '../flights/FlightLinks';
 import { ConsensusBlock } from './ConsensusBlock';
 import { ScoreBreakdown } from './ScoreBreakdown';
 import { SunTimeline } from './SunTimeline';
 
 function DayChip({
   day,
+  unit,
   isActive,
   isInWindow,
   onClick,
 }: {
   day: ScoredDay;
+  unit: TempUnit;
   isActive: boolean;
   isInWindow: boolean;
   onClick: () => void;
@@ -42,7 +47,7 @@ function DayChip({
     >
       <span className="day-chip-label">{dayLabel(day.date)}</span>
       <span className="day-chip-dot" style={{ background: scoreColor(day.score) }} />
-      <span className="day-chip-temp">{formatTemp(day.tempMax)}</span>
+      <span className="day-chip-temp">{formatTempBare(day.tempMax, unit)}</span>
     </button>
   );
 }
@@ -50,6 +55,7 @@ function DayChip({
 export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const closeDetail = useAppStore((s) => s.closeDetail);
   const setOrigin = useAppStore((s) => s.setOrigin);
+  const unit = useAppStore((s) => s.unit);
   const pinned = useAppStore((s) => s.pinned);
   const addPin = useAppStore((s) => s.addPin);
   const removePin = useAppStore((s) => s.removePin);
@@ -94,52 +100,101 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
 
   return (
     <div className="place-detail">
-      <header className="place-detail-header">
+      <header className="panel-sticky-header">
         <button type="button" className="back-button" onClick={closeDetail}>
           <ChevronLeft size={16} aria-hidden /> Back
         </button>
+
+        <div className="place-detail-title">
+          <div className="place-detail-title-text">
+            <h2 className="place-detail-name">
+              {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
+            </h2>
+            <p className="place-detail-sub">
+              {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm)} away`} · best on{' '}
+              {dayLabel(scored.best.date)}
+              {elevationText && ` · ${elevationText}`}
+            </p>
+          </div>
+          <span className="score-badge-stack">
+            <span
+              className="score-badge score-badge-lg"
+              style={{ background: scoreColor(scored.score), color: scoreTextColor(scored.score) }}
+            >
+              {scored.score}
+            </span>
+            <span className="score-word">{scoreWord(scored.score)}</span>
+          </span>
+        </div>
+
+        {!isHome && (
+          <div className="place-detail-actions">
+            <button
+              type="button"
+              className={`trip-toggle${inTrip ? ' is-in-trip' : ''}`}
+              onClick={toggleTrip}
+            >
+              <Route size={15} strokeWidth={2} aria-hidden />
+              {inTrip ? 'In trip' : 'Add to trip'}
+            </button>
+            <button
+              type="button"
+              className={`pin-toggle pin-toggle-detail${isPinned ? ' is-pinned' : ''}`}
+              onClick={togglePin}
+            >
+              <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
+              {isPinned ? 'Watching' : 'Watch'}
+            </button>
+          </div>
+        )}
       </header>
 
-      <div className="place-detail-title">
-        <div className="place-detail-title-text">
-          <h2 className="place-detail-name">
-            {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
-          </h2>
-          <p className="place-detail-sub">
-            {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm)} away`} · best on{' '}
-            {dayLabel(scored.best.date)}
-            {elevationText && ` · ${elevationText}`}
-          </p>
-        </div>
-        <span className="score-badge-stack">
-          <span
-            className="score-badge score-badge-lg"
-            style={{ background: scoreColor(scored.score), color: scoreTextColor(scored.score) }}
-          >
-            {scored.score}
-          </span>
-          <span className="score-word">{scoreWord(scored.score)}</span>
-        </span>
-      </div>
-
-      {!isHome && (
-        <div className="place-detail-actions">
-          <button
-            type="button"
-            className={`trip-toggle${inTrip ? ' is-in-trip' : ''}`}
-            onClick={toggleTrip}
-          >
-            <Route size={15} strokeWidth={2} aria-hidden />
-            {inTrip ? 'In trip' : 'Add to trip'}
-          </button>
-          <button
-            type="button"
-            className={`pin-toggle pin-toggle-detail${isPinned ? ' is-pinned' : ''}`}
-            onClick={togglePin}
-          >
-            <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
-            {isPinned ? 'Watching' : 'Watch'}
-          </button>
+      {place.airport && (
+        <div className="airport-info">
+          <div className="airport-codes">
+            {place.airport.iata && <span className="airport-code">{place.airport.iata}</span>}
+            {place.airport.icao && (
+              <span className="airport-code airport-code-secondary">{place.airport.icao}</span>
+            )}
+            {place.airport.municipality && (
+              <span className="airport-serves">Serves {place.airport.municipality}</span>
+            )}
+          </div>
+          {(place.airport.runways || place.airport.longestRunwayM) && (
+            <p className="airport-facts">
+              {place.airport.runways
+                ? `${place.airport.runways} runway${place.airport.runways > 1 ? 's' : ''}`
+                : ''}
+              {place.airport.runways && place.airport.longestRunwayM ? ' · ' : ''}
+              {place.airport.longestRunwayM
+                ? `longest ${place.airport.longestRunwayM.toLocaleString()} m`
+                : ''}
+            </p>
+          )}
+          {(place.airport.home || place.airport.wiki) && (
+            <div className="airport-links">
+              {place.airport.home && (
+                <a
+                  className="airport-link"
+                  href={place.airport.home}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Official site ↗
+                </a>
+              )}
+              {place.airport.wiki && (
+                <a
+                  className="airport-link"
+                  href={place.airport.wiki}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Wikipedia ↗
+                </a>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -148,6 +203,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
           <DayChip
             key={d.date}
             day={d}
+            unit={unit}
             isActive={d.date === day.date}
             isInWindow={windowDates.has(d.date)}
             onClick={() => setActiveDate(d.date)}
@@ -191,13 +247,13 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
           <div>
             <dt>Temperature</dt>
             <dd>
-              {formatTemp(day.tempMin)} – {formatTemp(day.tempMax)}
+              {formatTempBare(day.tempMin, unit)} – {formatTemp(day.tempMax, unit)}
             </dd>
           </div>
           {day.apparentTempMax !== undefined && (
             <div>
               <dt>Feels like</dt>
-              <dd>{formatTemp(day.apparentTempMax)}</dd>
+              <dd>{formatTemp(day.apparentTempMax, unit)}</dd>
             </div>
           )}
           {day.uvIndexMax !== undefined && (
@@ -220,6 +276,8 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
       <ScoreBreakdown day={day} />
 
       <ConsensusBlock consensus={consensus} isLoading={insight.isLoadingConsensus} />
+
+      {!isHome && <FlightLinks place={place} date={day.date} />}
 
       {!isHome && (
         <div className="detail-actions">

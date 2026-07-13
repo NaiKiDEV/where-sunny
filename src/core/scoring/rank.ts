@@ -2,10 +2,6 @@ import type { Candidate, DayForecast, ScoredPlace } from '../types';
 import type { ComfortPrefs } from './score';
 import { DEFAULT_COMFORT, scoreDays } from './score';
 
-/**
- * Score one candidate against its forecast for the given window dates.
- * Returns null when the forecast has no days inside the window.
- */
 export function scorePlace(
   candidate: Candidate,
   forecast: DayForecast[] | undefined,
@@ -21,10 +17,7 @@ export function scorePlace(
   return { ...candidate, days, windowDays, best, score: best.score };
 }
 
-/**
- * Rank candidates by best-day sun score (desc), ties broken by distance.
- * `forecasts[i]` must correspond to `candidates[i]`.
- */
+/** `forecasts[i]` must correspond to `candidates[i]`. */
 export function rankPlaces(
   candidates: Candidate[],
   forecasts: DayForecast[][],

@@ -39,7 +39,6 @@ describe('planTrip', () => {
     expect(sameDay[1].assignedDate).toBe(DATES[0]);
     expect(sameDay[1].forecast?.score).toBe(50);
 
-    // stop b on day 2 -> next date
     const nextDay = planTrip([stop('a', 1), stop('b', 2)], byStop, DATES);
     expect(nextDay[1].dayIndex).toBe(1);
     expect(nextDay[1].forecast?.score).toBe(55);

@@ -1,13 +1,21 @@
 import { useEffect, useRef, useState } from 'react';
+import type { FeatureCollection } from 'geojson';
 import maplibregl from 'maplibre-gl';
+import type { Airport } from '../../core/airports/types';
+import { airportToPlace } from '../../core/airports/types';
 import { TRAVEL_TIERS } from '../../core/candidates/tiers';
 import type { ScoredPlace } from '../../core/types';
+import { useBannedFilter } from '../../hooks/useBannedFilter';
 import { useIsMobile } from '../../hooks/useMediaQuery';
 import { useAppStore } from '../../state/store';
 import {
+  addAirportLayers,
   addMapLayers,
+  AIRPORT_ICONS_LAYER,
   fitToRadius,
   PLACE_CIRCLES_LAYER,
+  updateAirports,
+  updateBannedCountries,
   updateOverlay,
   updatePlaces,
   updateRadius,
@@ -24,15 +32,49 @@ function makeUserMarkerElement(): HTMLElement {
   return el;
 }
 
+const EMPTY_COUNTRIES: FeatureCollection = { type: 'FeatureCollection', features: [] };
+
+// The FULL country collection is fetched once and cached so remounts and ban
+// changes reuse it - only the (cheap) subset filter re-runs when the effective
+// ban set changes. The overlay is non-critical, so a fetch failure resolves to
+// an empty collection rather than throwing.
+let allCountriesPromise: Promise<FeatureCollection> | null = null;
+
+function loadAllCountries(): Promise<FeatureCollection> {
+  if (!allCountriesPromise) {
+    allCountriesPromise = fetch(`${import.meta.env.BASE_URL}data/countries.json`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`countries.json: HTTP ${res.status}`);
+        return res.json() as Promise<FeatureCollection>;
+      })
+      .catch(() => EMPTY_COUNTRIES);
+  }
+  return allCountriesPromise;
+}
+
+function bannedSubset(all: FeatureCollection, codes: ReadonlySet<string>): FeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: all.features.filter((f) => {
+      const code = f.properties?.code;
+      return typeof code === 'string' && codes.has(code.toUpperCase());
+    }),
+  };
+}
+
 interface MapViewProps {
   results: ScoredPlace[];
   pinned: ScoredPlace[];
+  airports: Airport[];
 }
 
-export function MapView({ results, pinned }: MapViewProps) {
+export function MapView({ results, pinned, airports }: MapViewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const userMarkerRef = useRef<maplibregl.Marker | null>(null);
+  // Keyed lookup so the (once-registered) click handler can resolve an airport
+  // hit to its full record without re-subscribing to the airports array.
+  const airportsByKey = useRef<Map<string, Airport>>(new Map());
   const [isMapReady, setMapReady] = useState(false);
 
   const origin = useAppStore((s) => s.origin);
@@ -40,13 +82,13 @@ export function MapView({ results, pinned }: MapViewProps) {
   const selectedPlaceKey = useAppStore((s) => s.selectedPlaceKey);
   const overlay = useAppStore((s) => s.overlay);
   const overlayStyle = useAppStore((s) => s.overlayStyle);
+  const { codes: bannedCodes } = useBannedFilter();
   const isMobile = useIsMobile();
 
   const fitPadding: FitPadding = isMobile
     ? { top: 130, bottom: Math.round(window.innerHeight * 0.28), left: 36, right: 36 }
     : { top: 110, bottom: 60, left: 460, right: 70 };
 
-  // map lifecycle - init once
   useEffect(() => {
     if (!containerRef.current) return;
     const startOrigin = useAppStore.getState().origin;
@@ -55,25 +97,64 @@ export function MapView({ results, pinned }: MapViewProps) {
       style: MAP_STYLE_URL,
       center: startOrigin ? [startOrigin.lon, startOrigin.lat] : EUROPE_CENTER,
       zoom: startOrigin ? 6 : 3.3,
-      attributionControl: { compact: true, customAttribution: 'Weather: Open-Meteo · Places: GeoNames' },
+      attributionControl: {
+        compact: true,
+        customAttribution: 'Weather: Open-Meteo · Places: GeoNames · Airports: OurAirports',
+      },
     });
 
     map.on('load', () => {
       addMapLayers(map);
+      addAirportLayers(map);
       setMapReady(true);
     });
     map.on('click', (e) => {
       if (!map.getLayer(PLACE_CIRCLES_LAYER)) return; // style still loading
-      const hits = map.queryRenderedFeatures(e.point, { layers: [PLACE_CIRCLES_LAYER] });
-      const key = hits.length > 0 ? (hits[0].properties?.key as string) : null;
-      useAppStore.getState().selectPlace(key ?? null);
+      // A ranked place wins over an airport sharing the same spot; an airport
+      // opens as a preview (its own forecast + detail), empty space closes.
+      const placeHits = map.queryRenderedFeatures(e.point, { layers: [PLACE_CIRCLES_LAYER] });
+      if (placeHits.length > 0) {
+        useAppStore.getState().selectPlace((placeHits[0].properties?.key as string) ?? null);
+        return;
+      }
+      if (map.getLayer(AIRPORT_ICONS_LAYER)) {
+        // Airports render as small plane icons, so query a few px around the click
+        // instead of demanding a pixel-perfect hit, then take the nearest one.
+        const pad = 8;
+        const airportHits = map.queryRenderedFeatures(
+          [
+            [e.point.x - pad, e.point.y - pad],
+            [e.point.x + pad, e.point.y + pad],
+          ],
+          { layers: [AIRPORT_ICONS_LAYER] },
+        );
+        let airport: Airport | undefined;
+        let bestDist = Infinity;
+        for (const hit of airportHits) {
+          const found = airportsByKey.current.get(hit.properties?.key as string);
+          if (!found) continue;
+          const p = map.project([found.lon, found.lat]);
+          const dist = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
+          if (dist < bestDist) {
+            bestDist = dist;
+            airport = found;
+          }
+        }
+        if (airport) {
+          useAppStore.getState().setPreviewPlace(airportToPlace(airport));
+          return;
+        }
+      }
+      useAppStore.getState().selectPlace(null);
     });
-    map.on('mouseenter', PLACE_CIRCLES_LAYER, () => {
-      map.getCanvas().style.cursor = 'pointer';
-    });
-    map.on('mouseleave', PLACE_CIRCLES_LAYER, () => {
-      map.getCanvas().style.cursor = '';
-    });
+    for (const layer of [PLACE_CIRCLES_LAYER, AIRPORT_ICONS_LAYER]) {
+      map.on('mouseenter', layer, () => {
+        map.getCanvas().style.cursor = 'pointer';
+      });
+      map.on('mouseleave', layer, () => {
+        map.getCanvas().style.cursor = '';
+      });
+    }
 
     mapRef.current = map;
     return () => {
@@ -85,17 +166,35 @@ export function MapView({ results, pinned }: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // place markers follow results + pins + selection
   useEffect(() => {
     if (isMapReady && mapRef.current) updatePlaces(mapRef.current, results, pinned, selectedPlaceKey);
   }, [isMapReady, results, pinned, selectedPlaceKey]);
 
-  // weather wash reflects the chosen mode + style, rebuilt from current data
+  // airport reference layer: always shown, brought forward (emphasized) in
+  // flight mode - the tier you'd actually fly for.
+  useEffect(() => {
+    airportsByKey.current = new Map(airports.map((a) => [a.key, a]));
+    if (isMapReady && mapRef.current) updateAirports(mapRef.current, airports, tier === 'flight');
+  }, [isMapReady, airports, tier]);
+
+  // banned-country overlay: fetch all countries once, then repaint the banned
+  // subset whenever the effective ban set changes so user picks shade at once.
+  useEffect(() => {
+    if (!isMapReady) return;
+    let cancelled = false;
+    loadAllCountries().then((all) => {
+      const map = mapRef.current;
+      if (!cancelled && map) updateBannedCountries(map, bannedSubset(all, bannedCodes));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [isMapReady, bannedCodes]);
+
   useEffect(() => {
     if (isMapReady && mapRef.current) updateOverlay(mapRef.current, results, pinned, overlay, overlayStyle);
   }, [isMapReady, results, pinned, overlay, overlayStyle]);
 
-  // origin marker, radius ring, and camera follow origin + tier
   useEffect(() => {
     const map = mapRef.current;
     if (!isMapReady || !map || !origin) return;

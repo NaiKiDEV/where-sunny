@@ -16,8 +16,6 @@ and tells you whether the trip beats staying home.
 - Bundled **GeoNames** city dataset (~69k places) as travel candidates
 - **Vitest** for the pure-TS core domain
 
-See [docs/DESIGN.md](docs/DESIGN.md) for the full product and architecture design.
-
 ## Development
 
 ```bash
@@ -43,7 +41,7 @@ produces the production bundle in `dist/`.
    it, and it always shows its forecast, marker, and details.
 6. Detail views cross-check the score against three independent weather models
    (ECMWF, GFS, ICON) and show an hourly sun timeline, so you can see both how
-   confident the forecast is and *when* the sun actually appears.
+   confident the forecast is and _when_ the sun actually appears.
 
 ## Data & attribution
 

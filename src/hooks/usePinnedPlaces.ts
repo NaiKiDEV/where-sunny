@@ -6,6 +6,7 @@ import { windowDates } from '../core/scoring/window';
 import type { ScoredPlace } from '../core/types';
 import { fetchDailyForecasts } from '../core/weather/openMeteo';
 import { useAppStore } from '../state/store';
+import { useBannedFilter } from './useBannedFilter';
 import { useLocalDate } from './useLocalDate';
 
 export interface PinnedPlacesResult {
@@ -32,7 +33,10 @@ export function usePinnedPlaces(): PinnedPlacesResult {
 
   const todayIso = useLocalDate();
   const dates = useMemo(() => windowDates(timeWindow), [timeWindow, todayIso]);
+  const { codes, isBanned } = useBannedFilter();
 
+  // Banning HIDES a pin's forecast reactively; the saved pin itself is never
+  // removed, so un-banning brings it straight back.
   const pinnedScored = useMemo(() => {
     if (!forecastQuery.data) return [];
     const scored: ScoredPlace[] = [];
@@ -41,8 +45,9 @@ export function usePinnedPlaces(): PinnedPlacesResult {
       const result = scorePlace({ place, distanceKm }, forecastQuery.data[i], dates, comfort);
       if (result) scored.push(result);
     });
-    return scored; // user's own order, not score order
-  }, [forecastQuery.data, pinned, origin, dates, comfort]);
+    return scored.filter((p) => !isBanned(p.place)); // user's own order, not score order
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forecastQuery.data, pinned, origin, dates, comfort, codes]);
 
   return { pinnedScored, isLoading: pinned.length > 0 && forecastQuery.isLoading };
 }

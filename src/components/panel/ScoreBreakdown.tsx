@@ -1,29 +1,29 @@
-import { Cloud, CloudRain, Sun, Thermometer, Wind, type LucideIcon } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { explainScore, type ScorePart } from '../../core/scoring/explain';
 import { comfortTemp } from '../../core/scoring/score';
 import type { ScoredDay } from '../../core/types';
-import { formatSunHours, formatTemp, formatWind } from '../../lib/format';
+import { formatSunHours, formatTemp, formatTempBare, formatWind, type TempUnit } from '../../lib/format';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useAppStore } from '../../state/store';
+import { SCORE_PART_META } from './scoreParts';
 
-const PART_META: Record<ScorePart['id'], { label: string; Icon: LucideIcon; barClass: string }> = {
-  sun: { label: 'Sunshine', Icon: Sun, barClass: 'breakdown-bar-sun' },
-  warmth: { label: 'Warmth', Icon: Thermometer, barClass: 'breakdown-bar-warmth' },
-  cloud: { label: 'Clouds', Icon: Cloud, barClass: 'breakdown-bar-cloud' },
-  rain: { label: 'Rain risk', Icon: CloudRain, barClass: 'breakdown-bar-rain' },
-  wind: { label: 'Wind', Icon: Wind, barClass: 'breakdown-bar-wind' },
-};
-
-function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, idealMax: number): string {
+function partDetail(
+  id: ScorePart['id'],
+  day: ScoredDay,
+  idealMin: number,
+  idealMax: number,
+  unit: TempUnit,
+): string {
   switch (id) {
     case 'sun':
       return `${formatSunHours(day.sunshineDuration)} of ${formatSunHours(day.daylightDuration)} daylight`;
     case 'warmth': {
       const felt = comfortTemp(day);
-      const temp = formatTemp(felt);
+      const temp = formatTemp(felt, unit);
       const feelsNote = day.apparentTempMax === undefined ? '' : ' feels-like';
-      if (felt < idealMin) return `${temp}${feelsNote} - cooler than your ${idealMin}–${idealMax}° zone`;
-      if (felt > idealMax) return `${temp}${feelsNote} - hotter than your ${idealMin}–${idealMax}° zone`;
+      const zone = `${formatTempBare(idealMin, unit)}–${formatTempBare(idealMax, unit)}`;
+      if (felt < idealMin) return `${temp}${feelsNote} - cooler than your ${zone} zone`;
+      if (felt > idealMax) return `${temp}${feelsNote} - hotter than your ${zone} zone`;
       return `${temp}${feelsNote} - in your comfort zone`;
     }
     case 'cloud':
@@ -41,6 +41,8 @@ function partDetail(id: ScorePart['id'], day: ScoredDay, idealMin: number, ideal
  */
 export function ScoreBreakdown({ day }: { day: ScoredDay }) {
   const comfort = useAppStore((s) => s.comfort);
+  const unit = useAppStore((s) => s.unit);
+  const openScoreInfo = useAppStore((s) => s.openScoreInfo);
   const breakdown = explainScore(day, comfort);
 
   return (
@@ -51,7 +53,7 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
       </div>
       <div className="breakdown-rows">
         {breakdown.parts.map((part) => {
-          const meta = PART_META[part.id];
+          const meta = SCORE_PART_META[part.id];
           const fill = part.maxPoints === 0 ? 0 : Math.abs(part.points / part.maxPoints);
           return (
             <div key={part.id} className="breakdown-row">
@@ -71,7 +73,7 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
                     style={{ width: `${Math.round(fill * 100)}%` }}
                   />
                 </span>
-                <span className="breakdown-detail">{partDetail(part.id, day, comfort.idealMin, comfort.idealMax)}</span>
+                <span className="breakdown-detail">{partDetail(part.id, day, comfort.idealMin, comfort.idealMax, unit)}</span>
               </span>
             </div>
           );
@@ -82,6 +84,10 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
           Penalties outweigh everything the day offers - the score bottoms out at 0.
         </p>
       )}
+      <button type="button" className="breakdown-explain" onClick={openScoreInfo}>
+        <HelpCircle size={14} strokeWidth={2} aria-hidden />
+        How the Sunny Score works
+      </button>
     </div>
   );
 }

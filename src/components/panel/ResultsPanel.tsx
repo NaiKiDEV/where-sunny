@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useState } from 'react';
+import { ChevronLeft } from 'lucide-react';
 import { Drawer } from 'vaul';
 import type { Place, ScoredPlace } from '../../core/types';
 import { useIsMobile } from '../../hooks/useMediaQuery';
@@ -14,14 +15,14 @@ import { TripsView } from './TripsView';
 function DetailLoading({ place, error, onBack }: { place: Place; error: Error | null; onBack: () => void }) {
   return (
     <div className="place-detail">
-      <header className="place-detail-header">
+      <header className="panel-sticky-header">
         <button type="button" className="back-button" onClick={onBack}>
-          ‹ Back
+          <ChevronLeft size={16} aria-hidden /> Back
         </button>
+        <h2 className="place-detail-name">
+          {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
+        </h2>
       </header>
-      <h2 className="place-detail-name">
-        {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
-      </h2>
       {error ? (
         <p className="place-detail-sub" role="alert">
           Couldn't load this forecast - check your connection and try again.
@@ -123,20 +124,24 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
       setActiveSnapPoint={setSnap}
       snapToSequentialPoint
     >
-      <Drawer.Portal>
-        <Drawer.Content className="drawer-content" aria-describedby={undefined}>
-          <Drawer.Title className="visually-hidden">Sunny places</Drawer.Title>
-          {/* vaul's own handle: drags the sheet and taps cycle through snap points. */}
-          <Drawer.Handle className="drawer-handle" />
-          {/* Filters ride along inside the sheet so day/range/comfort stay reachable while browsing. */}
-          {!isDetail && !tripsOpen && (
-            <div className="drawer-controls">
-              <FilterControls />
-            </div>
-          )}
-          <div className="drawer-scroll">{content}</div>
-        </Drawer.Content>
-      </Drawer.Portal>
+      {/* No Drawer.Portal: rendering the sheet inline keeps it inside .app's
+          stacking context, so the top-bar popovers (which lift to --z-overlay
+          within .app) can paint above it. Portaled to <body>, the sheet sat at
+          --z-panel in the root context and covered every popover. .app has no
+          transform/filter/contain, so its overflow:hidden can't clip this
+          position:fixed sheet. Modals stay body-portaled and above everything. */}
+      <Drawer.Content className="drawer-content" aria-describedby={undefined}>
+        <Drawer.Title className="visually-hidden">Sunny places</Drawer.Title>
+        {/* vaul's own handle: drags the sheet and taps cycle through snap points. */}
+        <Drawer.Handle className="drawer-handle" />
+        {/* Filters ride along inside the sheet so day/range/comfort stay reachable while browsing. */}
+        {!isDetail && !tripsOpen && (
+          <div className="drawer-controls">
+            <FilterControls variant="inset" />
+          </div>
+        )}
+        <div className="drawer-scroll">{content}</div>
+      </Drawer.Content>
     </Drawer.Root>
   );
 }

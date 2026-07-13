@@ -9,6 +9,7 @@ import { windowDates } from '../core/scoring/window';
 import type { Candidate, ScoredPlace } from '../core/types';
 import { fetchDailyForecasts } from '../core/weather/openMeteo';
 import { useAppStore } from '../state/store';
+import { useBannedFilter } from './useBannedFilter';
 import { useLocalDate } from './useLocalDate';
 
 /**
@@ -81,11 +82,17 @@ export function useSunnyPlaces(): SunnyPlacesResult {
   const dates = useMemo(() => windowDates(timeWindow), [timeWindow, todayIso]);
 
   const comfort = useAppStore((s) => s.comfort);
+  const { codes, isBanned } = useBannedFilter();
 
+  // Built-in bans are stripped from the bundled dataset upstream; this drops the
+  // user's own picks reactively (`codes` in the deps repaints on a ban change).
   const results = useMemo(() => {
     if (!forecastQuery.data) return [];
-    return rankPlaces(candidates, forecastQuery.data.slice(1), dates, comfort);
-  }, [forecastQuery.data, candidates, dates, comfort]);
+    return rankPlaces(candidates, forecastQuery.data.slice(1), dates, comfort).filter(
+      (r) => !isBanned(r.place),
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [forecastQuery.data, candidates, dates, comfort, codes]);
 
   const home = useMemo(() => {
     if (!forecastQuery.data?.[0] || !origin || !queryOrigin) return null;

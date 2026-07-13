@@ -36,6 +36,50 @@
   }
 }
 
+/* Icon actions travel as one flex group so they align as a unit instead of
+   each fighting the location chip for row space. margin-left:auto pins the
+   cluster to the far right on every screen, so the gap falls between it and the
+   location chip rather than after it. Under width pressure the auto margin
+   collapses to zero and the location chip truncates as before. */
+.control-cluster {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+/* Mobile: one single row. The location chip flexes and truncates under
+   pressure; the icon cluster holds its natural 44px sizing and never shrinks.
+   Because every control lives in this one flex container, nothing can overlap
+   the way the free-floating overlay button used to slide under this row. */
+.top-controls-mobile .location-menu {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.top-controls-mobile .location-chip {
+  max-width: 100%;
+}
+
+.top-controls-mobile .control-cluster {
+  flex-shrink: 0;
+}
+
+/* Folded into the cluster on mobile, the overlay control drops its fixed
+   top-right anchor and flows inline; its popover still anchors to it because
+   .layer-control stays a positioned ancestor.
+   z-index MUST reset to auto: the base rule sets z-index 20 for the desktop
+   floating button, but inline that would make this control (alone among the
+   cluster) sit above a sibling popover's full-screen backdrop - so tapping it
+   opened Layers instead of closing the open popover. auto keeps it level with
+   its siblings; its own open popover still lifts via .top-controls:has(...). */
+.top-controls-mobile .layer-control {
+  position: relative;
+  top: auto;
+  right: auto;
+  z-index: auto;
+}
+
 .top-controls button,
 .top-controls .segmented,
 .top-controls .comfort-backdrop,
@@ -68,7 +112,9 @@
   box-shadow: var(--shadow-chip);
   font-weight: 650;
   max-width: 70vw;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .location-chip:hover {
@@ -127,12 +173,27 @@
   -webkit-backdrop-filter: blur(12px);
   box-shadow: var(--shadow-chip);
   font-size: var(--text-base);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease;
 }
 
 .icon-chip:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-soft);
+}
+
+/* Comfortable 44px tap targets on touch layouts (the 40px default sat just
+   under the iOS minimum, part of why the crowded row felt unclickable). */
+@media (max-width: 767px) {
+  .icon-chip {
+    width: 44px;
+    height: 44px;
+  }
+
+  .location-chip {
+    padding: 11px 16px;
+  }
 }
 
 .icon-chip-badge {
@@ -245,7 +306,9 @@
 .layer-control-trigger.is-active {
   color: var(--color-sun-700);
   background: var(--color-sun-100);
-  box-shadow: var(--shadow-chip), inset 0 0 0 1.5px var(--color-sun-500);
+  box-shadow:
+    var(--shadow-chip),
+    inset 0 0 0 1.5px var(--color-sun-500);
 }
 
 .layer-popover {
@@ -294,7 +357,9 @@
   font-weight: 600;
   color: var(--color-ink-soft);
   white-space: nowrap;
-  transition: background 140ms ease, color 140ms ease;
+  transition:
+    background 140ms ease,
+    color 140ms ease;
 }
 
 .segmented-option:hover {
@@ -302,8 +367,106 @@
 }
 
 .segmented-option.is-active {
-  background: linear-gradient(160deg, var(--color-sun-500), var(--color-sun-600));
+  background: linear-gradient(
+    160deg,
+    var(--color-sun-500),
+    var(--color-sun-600)
+  );
   color: #fff;
+}
+
+/* Inset variant: for solid surfaces (menus, panels) where the floating chip's
+   translucency, blur, and drop shadow read as an out-of-place hovering element.
+   Matches the flat sun-100 track used by the in-drawer day/range filters
+   (.drawer-controls .segmented) so every on-surface toggle reads the same. */
+.segmented--inset {
+  background: var(--color-sun-100);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* ============ select menu (filter chips) ============ */
+/* Collapses a segmented row of pills into one value chip that opens a popover
+   list. The popover reuses the shared .menu-* styling (and its pointer-events
+   + z-lift rules inside .top-controls), so only the trigger chip is new here. */
+.select-menu {
+  position: relative;
+}
+
+.select-chip {
+  display: inline-flex;
+  align-items: center;
+  /* Collapse the line box to glyph height so the icon, value, and caret seat
+     on the same optical center - same trick as .location-chip. */
+  line-height: 1;
+  gap: var(--space-2);
+  padding: 8px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--color-surface-veil);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-chip);
+  color: var(--color-ink-soft);
+  transition:
+    transform 120ms ease,
+    box-shadow 120ms ease,
+    color 120ms ease;
+}
+
+.select-chip:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-soft);
+  color: var(--color-ink);
+}
+
+.select-chip-icon {
+  flex-shrink: 0;
+  color: var(--color-sun-600);
+}
+
+.select-chip-value {
+  white-space: nowrap;
+  font-weight: 650;
+  color: var(--color-ink);
+}
+
+.select-chip-caret {
+  flex-shrink: 0;
+  color: var(--color-ink-faint);
+}
+
+/* Inset: flat chip for solid surfaces (the drawer), matching the segmented
+   inset track - no veil, blur, or shadow so it sits flush on the sheet. */
+.select-chip--inset {
+  background: var(--color-sun-100);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.select-chip--inset:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+/* A tad tighter than the wide action menus - filter labels are short. */
+.select-menu .menu-popover {
+  width: min(240px, 80vw);
+}
+
+/* The check column stays reserved even when unchecked so labels never shift
+   between the selected and unselected rows. */
+.select-menu .menu-item-icon {
+  width: 18px;
+  color: var(--color-sun-600);
+}
+
+/* Lift the filter row above the scrolling results below while a popover is
+   open in the drawer; otherwise the later sibling paints over the list. */
+.drawer-controls:has(.menu-popover) {
+  position: relative;
+  z-index: 1;
 }
 
 /* ============ search dialog ============ */
@@ -332,12 +495,23 @@
   gap: var(--space-3);
 }
 
+/* The dialog's mode tabs span the full width so three options read as one
+   evenly-divided switcher rather than a floating chip parked to the left. */
+.search-dialog .segmented {
+  display: flex;
+}
+
+.search-dialog .segmented-option {
+  flex: 1;
+  text-align: center;
+}
+
 .search-input {
   font: inherit;
   padding: 12px 16px;
   border-radius: var(--radius-md);
   border: 1.5px solid var(--color-line);
-  background: var(--color-sun-100);
+  background: var(--color-surface);
   color: var(--color-ink);
 }
 
@@ -348,7 +522,53 @@
 .search-input:focus {
   border-color: var(--color-sun-600);
   outline: none;
+}
+
+/* Flight search tab: route pickers reuse the .flight-* styles from panel.css;
+   only the date row is specific to the dialog. */
+.flight-search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.flight-search-dates {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.flight-search-date {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-faint);
+}
+
+.flight-search-optional {
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+}
+
+.flight-search-date input {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
   background: var(--color-surface);
+  color: var(--color-ink);
+}
+
+.flight-search-date input:focus {
+  outline: none;
+  border-color: var(--color-sky);
 }
 
 .search-locate {
@@ -417,7 +637,11 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-4);
-  background: linear-gradient(170deg, rgba(255, 243, 214, 0.75), rgba(255, 253, 247, 0.55));
+  background: linear-gradient(
+    170deg,
+    rgba(255, 243, 214, 0.75),
+    rgba(255, 253, 247, 0.55)
+  );
   backdrop-filter: blur(4px);
 }
 
@@ -556,6 +780,200 @@
   color: var(--color-ink-faint);
 }
 
+/* ============ settings menu ============ */
+.settings-menu {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Reuses .menu-popover (pointer-events + z-index lift come with the class);
+   anchor to the right so it doesn't overflow off a right-side trigger. */
+.settings-popover {
+  right: 0;
+  left: auto;
+  width: min(300px, 84vw);
+  gap: var(--space-4);
+  padding: var(--space-3);
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+/* The rows (comfort presets, score help) and the titles carry a horizontal
+   inset, so their text sits one step in from the popover edge. Match that inset
+   on the segmented control and the hint so every element shares one left edge -
+   while the rounded rows keep their breathing room from the popover sides. */
+.settings-section .segmented {
+  align-self: flex-start;
+  margin-inline-start: var(--space-3);
+}
+
+/* ---- currency picker (settings) ---- */
+/* Collapsed chip: same footprint the old native select had, so the section
+   doesn't shift when it expands into the search view. */
+.currency-trigger {
+  align-self: flex-start;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  background: var(--color-sun-100);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+  transition: border-color 120ms ease;
+  flex-grow: 1;
+  width: 100%;
+  min-width: 0;
+}
+
+.currency-trigger:hover,
+.currency-trigger:focus-visible {
+  border-color: var(--color-sun-600);
+}
+
+.currency-trigger-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: start;
+  flex-grow: 1;
+}
+
+.currency-trigger-caret {
+  flex-shrink: 0;
+  color: var(--color-ink-faint);
+}
+
+.currency-code {
+  flex-shrink: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-xs);
+  letter-spacing: 0.06em;
+  color: var(--color-sun-700);
+  background: var(--color-sun-100);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+}
+
+/* Inside the tinted trigger chip the tinted badge would vanish - flip it. */
+.currency-trigger .currency-code {
+  background: var(--color-surface);
+}
+
+.currency-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.currency-picker-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-sun-600);
+  background: var(--color-surface);
+}
+
+.currency-picker-glyph {
+  flex-shrink: 0;
+  color: var(--color-ink-faint);
+}
+
+.currency-picker-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.currency-picker-input:focus {
+  outline: none;
+}
+
+/* Capped so long result sets scroll inside the popover instead of pushing
+   the comfort section off-screen. */
+.currency-picker-list {
+  max-height: 200px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.currency-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-align: left;
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+  transition: background 120ms ease;
+}
+
+.currency-option:hover {
+  background: var(--color-sun-100);
+}
+
+.currency-option.is-active {
+  background: var(--color-sun-100);
+  color: var(--color-sun-700);
+}
+
+.currency-option-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.currency-picker-empty {
+  padding: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+}
+
+.settings-popover .comfort-popover-hint {
+  padding-inline: var(--space-3);
+}
+
+.comfort-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.comfort-option-name {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.comfort-option-range {
+  font-weight: 500;
+  color: var(--color-ink-faint);
+}
+
 /* ============ search dialog additions ============ */
 .search-title {
   font-family: var(--font-display);
@@ -572,4 +990,294 @@
 .search-result-row .search-result {
   flex: 1;
   min-width: 0;
+}
+
+/* ============ settings menu additions ============ */
+/* The score-help action is a different kind of item than the settings above it,
+   so a full-width hairline (centered in the popover's row gap) sets it apart -
+   cleaner than a top border, which read as a stray outline on the button. */
+.settings-help {
+  position: relative;
+}
+
+.settings-help::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--space-2) * -1);
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--color-line);
+}
+
+/* ============ score info sheet ============ */
+.score-info-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-overlay);
+  background: rgba(43, 33, 21, 0.35);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: max(8vh, var(--space-5)) var(--space-4) var(--space-4);
+}
+
+.score-info-sheet {
+  width: min(520px, 100%);
+  max-height: 84vh;
+  overflow-y: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.score-info-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.score-info-title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 750;
+  line-height: 1.12;
+}
+
+.score-info-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-soft);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.score-info-close:hover {
+  background: var(--color-sun-100);
+  color: var(--color-ink);
+}
+
+.score-info-lede {
+  color: var(--color-ink-soft);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.score-info-factors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.score-info-factor {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.score-info-factor-icon {
+  width: 34px;
+  height: 34px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  background: var(--color-sun-100);
+  color: var(--color-sun-700);
+}
+
+.score-info-factor-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.score-info-factor-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.score-info-factor-label {
+  font-weight: 700;
+  font-size: var(--text-base);
+}
+
+.score-info-factor-tag {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-sun-700);
+  white-space: nowrap;
+}
+
+.score-info-factor-tag.is-penalty {
+  color: var(--color-danger);
+}
+
+.score-info-factor-track {
+  margin: 2px 0;
+}
+
+.score-info-factor-blurb {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+  line-height: 1.45;
+}
+
+.score-info-note {
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  background: var(--color-sun-100);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.score-info-note-title {
+  font-family: var(--font-display);
+  font-size: var(--text-base);
+  font-weight: 750;
+}
+
+.score-info-note p {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+  line-height: 1.5;
+}
+
+.score-info-source {
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+  line-height: 1.5;
+}
+
+/* ============ banned countries sheet ============ */
+/* Reuses .score-info-backdrop / .score-info-sheet / .score-info-head / -title /
+   -close / -lede for the shell; these style the list + picker inside it. */
+.banned-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.banned-group-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-faint);
+}
+
+.banned-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.banned-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--color-sun-100);
+}
+
+/* Built-in bans read as fixed, not actionable: no surface, muted ink. */
+.banned-row.is-locked {
+  background: transparent;
+  color: var(--color-ink-faint);
+}
+
+.banned-row-name {
+  font-weight: 650;
+  font-size: var(--text-sm);
+  min-width: 0;
+}
+
+.banned-row-code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-faint);
+  margin-left: 4px;
+}
+
+.banned-row-lock {
+  display: inline-flex;
+  flex-shrink: 0;
+  color: var(--color-ink-faint);
+}
+
+.banned-row-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border-radius: var(--radius-pill);
+  color: var(--color-ink-soft);
+  transition:
+    background 120ms ease,
+    color 120ms ease;
+}
+
+.banned-row-remove:hover {
+  background: var(--color-surface);
+  color: var(--color-danger);
+}
+
+.banned-empty {
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
+}
+
+.banned-add-input {
+  width: 100%;
+}
+
+.banned-add-results {
+  display: flex;
+  flex-direction: column;
+  margin-top: var(--space-1);
+}
+
+.banned-add-result {
+  flex-direction: row;
+  align-items: center;
+}
+
+/* IATA code badge in airport search results */
+.search-result-code {
+  display: inline-block;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: #fff;
+  background: var(--color-sky);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  margin-right: 6px;
+  vertical-align: middle;
 }

@@ -12,8 +12,21 @@ export function formatSunHours(seconds: number): string {
   return hours >= 10 ? `${Math.round(hours)}h` : `${hours.toFixed(1)}h`;
 }
 
-export function formatTemp(celsius: number): string {
-  return `${Math.round(celsius)}°`;
+/** Which unit temperatures are shown in. Stored raw in Celsius; converted on display. */
+export type TempUnit = 'c' | 'f';
+
+export function toDisplayTemp(celsius: number, unit: TempUnit): number {
+  return unit === 'f' ? (celsius * 9) / 5 + 32 : celsius;
+}
+
+/** Rounded degrees with the degree symbol but no unit letter ("20°"). For ranges that share a unit. */
+export function formatTempBare(celsius: number, unit: TempUnit): string {
+  return `${Math.round(toDisplayTemp(celsius, unit))}°`;
+}
+
+/** Rounded temperature with its unit symbol ("20°C" / "68°F"). */
+export function formatTemp(celsius: number, unit: TempUnit): string {
+  return `${formatTempBare(celsius, unit)}${unit === 'f' ? 'F' : 'C'}`;
 }
 
 export function formatElevation(meters: number): string {

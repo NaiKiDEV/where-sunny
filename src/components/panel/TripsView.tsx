@@ -23,6 +23,7 @@ import {
   type Trip,
   type TripStop,
 } from '../../core/trip/trip';
+import { useBannedFilter } from '../../hooks/useBannedFilter';
 import { useTripPlan, type StopInsight } from '../../hooks/useTripPlan';
 import { countryFlag, dayLabel, formatDistance, formatTemp } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
@@ -34,6 +35,7 @@ import { TerrainTag } from './TerrainTag';
 const BETTER_DAY_MARGIN = 12;
 
 function StopMeta({ insight }: { insight: StopInsight }) {
+  const unit = useAppStore((s) => s.unit);
   const { plan, sunrise, sunset, seaTempC } = insight;
   const { forecast, best, assignedDate } = plan;
   if (!forecast) return null;
@@ -57,7 +59,7 @@ function StopMeta({ insight }: { insight: StopInsight }) {
       )}
       {seaTempC !== undefined && (
         <span className="trip-stop-sea">
-          <Waves size={13} strokeWidth={2} aria-hidden /> {formatTemp(seaTempC)}
+          <Waves size={13} strokeWidth={2} aria-hidden /> {formatTemp(seaTempC, unit)}
         </span>
       )}
       {betterElsewhere && <span className="trip-stop-better">sunnier {dayLabel(best!.date)}</span>}
@@ -153,8 +155,11 @@ function ActiveTrip({ trip }: { trip: Trip }) {
   const optimizeTripOrder = useAppStore((s) => s.optimizeTripOrder);
   const deleteTrip = useAppStore((s) => s.deleteTrip);
   const { byKey, isLoading } = useTripPlan(trip);
+  const { isBanned } = useBannedFilter();
 
-  const ordered = orderedStops(trip);
+  // Banned stops are hidden from the itinerary without renumbering days or
+  // mutating the saved trip - un-banning brings them straight back.
+  const ordered = orderedStops(trip).filter((stop) => !isBanned(stop.place));
   const dayCount = tripDayCount(trip);
   const dates = windowDates('week');
 
@@ -208,6 +213,9 @@ function ActiveTrip({ trip }: { trip: Trip }) {
       ) : (
         Array.from({ length: dayCount }, (_, i) => i + 1).map((day) => {
           const dayStops = ordered.filter((s) => stopDay(s) === day);
+          // A day left empty only by banned stops is skipped, but its number is
+          // never reused - the surviving days keep their original Day N badges.
+          if (dayStops.length === 0) return null;
           const headerDate = dates[Math.min(day - 1, dates.length - 1)];
           return (
             <div className="trip-day" key={day}>
@@ -263,14 +271,14 @@ export function TripsView() {
 
   return (
     <div className="trips-view">
-      <header className="trips-header">
+      <header className="panel-sticky-header">
         <button type="button" className="back-button" onClick={closeTrips}>
           <ChevronLeft size={16} aria-hidden /> Back
         </button>
+        <h2 className="trips-title">
+          <Route size={20} strokeWidth={2.2} aria-hidden /> Trips
+        </h2>
       </header>
-      <h2 className="trips-title">
-        <Route size={20} strokeWidth={2.2} aria-hidden /> Trips
-      </h2>
 
       {trips.length === 0 ? (
         <div className="trips-empty">

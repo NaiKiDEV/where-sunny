@@ -16,14 +16,18 @@ export const DEFAULT_COMFORT: ComfortPrefs = { idealMin: 18, idealMax: 26 };
 
 export interface ComfortPreset extends ComfortPrefs {
   id: string;
-  label: string;
+  /** Short name; the range is rendered alongside so it can follow the active unit. */
+  name: string;
 }
 
+/** Sentinel preset that ignores temperature entirely (sun-only ranking). */
+export const ANY_COMFORT_ID = 'any';
+
 export const COMFORT_PRESETS: ComfortPreset[] = [
-  { id: 'cool', label: 'Cool 10–22°', idealMin: 10, idealMax: 22 },
-  { id: 'mild', label: 'Mild 18–26°', idealMin: 18, idealMax: 26 },
-  { id: 'hot', label: 'Hot 24–32°', idealMin: 24, idealMax: 32 },
-  { id: 'any', label: 'Any temp', idealMin: -60, idealMax: 60 },
+  { id: 'cool', name: 'Cool', idealMin: 10, idealMax: 22 },
+  { id: 'mild', name: 'Mild', idealMin: 18, idealMax: 26 },
+  { id: 'hot', name: 'Hot', idealMin: 24, idealMax: 32 },
+  { id: ANY_COMFORT_ID, name: 'Any temp', idealMin: -60, idealMax: 60 },
 ];
 
 // comfort falls linearly from the plateau edges to 0 over these spans

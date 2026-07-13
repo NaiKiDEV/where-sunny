@@ -13,6 +13,8 @@ interface SharePlace {
   k: string;
   n: string;
   c: string;
+  /** ISO alpha-2 code, so a shared stop's country ban matches on any device. */
+  cc?: string;
   la: number;
   lo: number;
   e?: number;
@@ -62,6 +64,7 @@ export function encodeTrip(trip: Trip): string {
       la: round(stop.place.lat),
       lo: round(stop.place.lon),
       ...(stop.place.elevation !== undefined ? { e: Math.round(stop.place.elevation) } : {}),
+      ...(stop.place.countryCode ? { cc: stop.place.countryCode } : {}),
     })),
   };
   return toBase64Url(JSON.stringify(payload));
@@ -87,6 +90,7 @@ export function decodeSharedTrip(param: string): SharedTripData | null {
             lon: p.lo,
             population: 0,
             ...(typeof p.e === 'number' ? { elevation: p.e } : {}),
+            ...(typeof p.cc === 'string' && p.cc ? { countryCode: p.cc } : {}),
           },
         };
       });

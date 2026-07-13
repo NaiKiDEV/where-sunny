@@ -61,4 +61,19 @@ describe('parseCityDataset', () => {
     expect(() => parseCityDataset({ hello: 'world' })).toThrow(/Invalid city dataset/);
     expect(() => parseCityDataset(null)).toThrow(/Invalid city dataset/);
   });
+
+  it('skips rows in banned countries so they never become places', () => {
+    const places = parseCityDataset({
+      v: 1,
+      count: 4,
+      rows: [
+        ['Vilnius', 'LT', 54.687, 25.28, 590_000],
+        ['Moscow', 'RU', 55.75, 37.62, 12_000_000],
+        ['Minsk', 'BY', 53.9, 27.57, 2_000_000],
+        ['Riga', 'LV', 56.95, 24.11, 600_000],
+      ],
+    });
+    expect(places.map((p) => p.name)).toEqual(['Vilnius', 'Riga']);
+    expect(places.some((p) => p.country === 'RU' || p.country === 'BY')).toBe(false);
+  });
 });

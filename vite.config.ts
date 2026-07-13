@@ -16,7 +16,7 @@ export default defineConfig({
       manifest: {
         name: 'Where Sunny?',
         short_name: 'Where Sunny',
-        description: 'Find where the sun is shining — nearby, a day trip, or a flight away.',
+        description: 'Find where the sun is shining - nearby, a day trip, or a flight away.',
         theme_color: '#f5b840',
         background_color: '#fff8ec',
         display: 'standalone',
@@ -43,6 +43,16 @@ export default defineConfig({
             urlPattern: /\/data\/cities\.json$/,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'city-data' },
+          },
+          {
+            urlPattern: /\/data\/countries\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'country-data' },
+          },
+          {
+            urlPattern: /\/data\/country-names\.json$/,
+            handler: 'StaleWhileRevalidate',
+            options: { cacheName: 'country-data' },
           },
         ],
       },

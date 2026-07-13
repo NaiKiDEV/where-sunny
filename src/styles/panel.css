@@ -6,9 +6,7 @@
   bottom: var(--space-4);
   width: var(--panel-width);
   z-index: var(--z-panel);
-  background: var(--color-surface-veil);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: var(--color-surface);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-soft);
   overflow-y: auto;
@@ -82,6 +80,38 @@
 }
 
 /* ============ shared panel content ============ */
+
+/* Sticky header shared by the detail, trips, and loading views: the top block
+   (back button + name + actions) stays pinned while the body scrolls beneath
+   it. Every one of those views pads its content by space-3/space-4, so the
+   negative margins here cancel that padding and let the bar - and its divider -
+   span the full panel width. z-index sits above scrolling content but stays
+   local to the panel, below the app's overlay popovers. */
+.panel-sticky-header {
+  position: sticky;
+  /* Pin 1px above the scroll top: subpixel rounding otherwise leaves a hairline
+     of the coloured content peeking above the bar. The extra pixel is absorbed
+     by the matching bump to margin-top and padding-top, so the resting layout
+     is unchanged and nothing visible is clipped. */
+  top: -1px;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: calc(-1 * var(--space-3) - 1px) calc(-1 * var(--space-4)) 0;
+  padding: calc(var(--space-3) + 1px) var(--space-4) var(--space-3);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-line);
+}
+
+/* The desktop panel is frosted glass; match it so the pinned bar reads as part
+   of the same surface and frosts the content sliding under it. */
+.results-panel .panel-sticky-header {
+  background: var(--color-surface);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
 .results-list {
   padding: var(--space-3) var(--space-4) var(--space-5);
 }
@@ -89,7 +119,11 @@
 .home-anchor {
   padding: var(--space-4);
   margin-bottom: var(--space-4);
-  background: linear-gradient(150deg, var(--color-sun-100), rgba(255, 243, 214, 0.35));
+  background: linear-gradient(
+    150deg,
+    var(--color-sun-100),
+    rgba(255, 243, 214, 0.35)
+  );
   border: 1px solid var(--color-line);
   border-radius: var(--radius-md);
 }
@@ -140,7 +174,9 @@
   color: var(--color-sun-700);
   font-weight: 650;
   font-size: var(--text-sm);
-  transition: background 120ms ease, border-color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease;
 }
 
 .show-more:hover {
@@ -162,7 +198,10 @@
   padding: var(--space-3);
   border-radius: var(--radius-md);
   border: 1px solid transparent;
-  transition: background 120ms ease, border-color 120ms ease, transform 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    transform 120ms ease;
 }
 
 .place-card:hover {
@@ -241,13 +280,8 @@
   gap: var(--space-3);
 }
 
-.place-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .back-button {
+  align-self: flex-start;
   display: inline-flex;
   align-items: center;
   line-height: 1;
@@ -257,7 +291,9 @@
   padding: var(--space-2) var(--space-3);
   margin-left: calc(-1 * var(--space-3));
   border-radius: var(--radius-pill);
-  transition: color 120ms ease, background 120ms ease;
+  transition:
+    color 120ms ease,
+    background 120ms ease;
 }
 
 .back-button:hover {
@@ -301,7 +337,9 @@
   background: var(--color-sun-100);
   opacity: 0.65;
   flex-shrink: 0;
-  transition: opacity 120ms ease, border-color 120ms ease;
+  transition:
+    opacity 120ms ease,
+    border-color 120ms ease;
 }
 
 .day-chip.is-window {
@@ -377,9 +415,15 @@
   font-weight: 650;
   padding: 11px 20px;
   border-radius: var(--radius-pill);
-  background: linear-gradient(160deg, var(--color-sun-500), var(--color-sun-600));
+  background: linear-gradient(
+    160deg,
+    var(--color-sun-500),
+    var(--color-sun-600)
+  );
   box-shadow: var(--shadow-chip);
-  transition: filter 120ms ease, transform 120ms ease;
+  transition:
+    filter 120ms ease,
+    transform 120ms ease;
 }
 
 .directions-link:hover {
@@ -405,7 +449,10 @@
   border-radius: var(--radius-pill);
   border: 1.5px solid var(--color-line);
   background: var(--color-surface);
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition:
+    border-color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
 }
 
 .detail-action-secondary:hover {
@@ -443,7 +490,12 @@
 .skeleton-card {
   height: 64px;
   border-radius: var(--radius-md);
-  background: linear-gradient(100deg, var(--color-sun-100) 40%, rgba(255, 253, 247, 0.9) 50%, var(--color-sun-100) 60%);
+  background: linear-gradient(
+    100deg,
+    var(--color-sun-100) 40%,
+    rgba(255, 253, 247, 0.9) 50%,
+    var(--color-sun-100) 60%
+  );
   background-size: 250% 100%;
   animation: skeleton-shimmer 1.4s ease-in-out infinite;
 }
@@ -540,7 +592,10 @@
   justify-content: center;
   border-radius: var(--radius-pill);
   color: var(--color-ink-faint);
-  transition: color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition:
+    color 120ms ease,
+    background 120ms ease,
+    transform 120ms ease;
 }
 
 .pin-toggle:hover {
@@ -573,12 +628,6 @@
 .pin-toggle-detail.is-pinned {
   background: var(--color-sun-100);
   border-color: var(--color-sun-500);
-}
-
-.place-detail-header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
 }
 
 .place-detail-title {
@@ -896,7 +945,11 @@
 }
 
 .breakdown-bar-sun {
-  background: linear-gradient(90deg, var(--color-sun-300), var(--color-sun-600));
+  background: linear-gradient(
+    90deg,
+    var(--color-sun-300),
+    var(--color-sun-600)
+  );
 }
 
 .breakdown-bar-warmth {
@@ -926,6 +979,23 @@
   font-style: italic;
 }
 
+.breakdown-explain {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 650;
+  color: var(--color-sun-700);
+  transition: color 120ms ease;
+}
+
+.breakdown-explain:hover {
+  color: var(--color-sun-600);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* ============ trips ============ */
 .trip-toggle {
   display: inline-flex;
@@ -939,7 +1009,10 @@
   font-size: var(--text-sm);
   font-weight: 650;
   background: transparent;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
 }
 
 .trip-toggle:hover {
@@ -958,11 +1031,6 @@
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-3) var(--space-4) var(--space-5);
-}
-
-.trips-header {
-  display: flex;
-  align-items: center;
 }
 
 .trips-title {
@@ -1071,7 +1139,7 @@
 }
 
 .trip-meta span + span::before {
-  content: '·';
+  content: "·";
   margin: 0 0.5em;
   color: var(--color-ink-faint);
 }
@@ -1298,4 +1366,225 @@
   color: #c0392b;
   background: transparent;
   border-color: #c0392b;
+}
+
+/* ============ airport detail block ============ */
+.airport-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: rgba(74, 134, 197, 0.09);
+  border: 1px solid rgba(74, 134, 197, 0.22);
+}
+
+.airport-codes {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.airport-code {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  letter-spacing: 0.06em;
+  color: #fff;
+  background: var(--color-sky);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+}
+
+.airport-code-secondary {
+  color: var(--color-sky);
+  background: transparent;
+  border: 1.5px solid rgba(74, 134, 197, 0.5);
+}
+
+.airport-serves,
+.airport-facts {
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.airport-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.airport-link {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-sky);
+  text-decoration: none;
+}
+
+.airport-link:hover {
+  text-decoration: underline;
+}
+
+.flight-links {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+}
+
+.flight-links-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.flight-route {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.flight-route-main {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.flight-route-side {
+  width: 2.8em;
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-faint);
+}
+
+.flight-route-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+
+.flight-route-change {
+  margin-left: auto;
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-sky);
+  cursor: pointer;
+}
+
+.flight-route-change:hover {
+  text-decoration: underline;
+}
+
+.flight-route-note {
+  margin: var(--space-1) 0 0 calc(var(--space-5) * 2);
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+}
+
+.flight-provider-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.flight-links-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+}
+
+.flight-picker {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.flight-picker-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.flight-picker-input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-line);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.flight-picker-input:focus {
+  outline: none;
+  border-color: var(--color-sky);
+}
+
+.flight-picker-cancel {
+  border: none;
+  background: none;
+  padding: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-faint);
+  cursor: pointer;
+}
+
+.flight-picker-cancel:hover {
+  color: var(--color-ink);
+}
+
+.flight-picker-option {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: none;
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+
+.flight-picker-option:hover {
+  background: var(--color-line);
+}
+
+.flight-picker-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flight-picker-city {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--color-ink-faint);
+}
+
+.flight-picker-auto {
+  font-weight: 600;
+  color: var(--color-sky);
 }

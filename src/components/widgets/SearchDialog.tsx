@@ -1,13 +1,27 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { MapPin, Star } from 'lucide-react';
+import { searchAirports } from '../../core/airports/search';
+import { airportToPlace, type Airport } from '../../core/airports/types';
 import type { Place } from '../../core/types';
 import type { GeoMatch } from '../../core/weather/geocoding';
 import { searchPlaces } from '../../core/weather/geocoding';
+import { useAirports } from '../../hooks/useAirports';
+import { useBannedFilter } from '../../hooks/useBannedFilter';
+import { FlightSearch } from '../flights/FlightSearch';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { countryFlag } from '../../lib/format';
 import { MAX_PINS, useAppStore } from '../../state/store';
+import { Segmented } from './Segmented';
 
 const SEARCH_DEBOUNCE_MS = 300;
+const MIN_QUERY = 2;
+
+type DestMode = 'explore' | 'airport' | 'flights';
+const DEST_TABS: { id: DestMode; label: string }[] = [
+  { id: 'explore', label: 'Places' },
+  { id: 'airport', label: 'Airports' },
+  { id: 'flights', label: 'Flights' },
+];
 
 function matchToPlace(match: GeoMatch): Place {
   return {
@@ -15,6 +29,7 @@ function matchToPlace(match: GeoMatch): Place {
     kind: 'pin',
     name: match.name,
     country: match.country,
+    countryCode: match.countryCode,
     admin1: match.admin1,
     lat: match.lat,
     lon: match.lon,
@@ -23,8 +38,14 @@ function matchToPlace(match: GeoMatch): Place {
   };
 }
 
+/** Pins cloned from an airport preview share the detail view's `p:`-prefixed key. */
+function airportPinKey(airport: Airport): string {
+  return `p:${airport.key}`;
+}
+
 export function SearchDialog() {
   const searchMode = useAppStore((s) => s.searchMode);
+  const openSearch = useAppStore((s) => s.openSearch);
   const closeSearch = useAppStore((s) => s.closeSearch);
   const setOrigin = useAppStore((s) => s.setOrigin);
   const pinned = useAppStore((s) => s.pinned);
@@ -33,6 +54,8 @@ export function SearchDialog() {
   const selectPlace = useAppStore((s) => s.selectPlace);
   const setPreviewPlace = useAppStore((s) => s.setPreviewPlace);
   const { locate, status: geoStatus, error: geoError } = useGeolocation();
+  const { airports, isLoading: airportsLoading } = useAirports();
+  const { isBanned } = useBannedFilter();
 
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<GeoMatch[]>([]);
@@ -41,17 +64,31 @@ export function SearchDialog() {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const isOpen = searchMode !== null;
+  const isAirport = searchMode === 'airport';
+  const isFlights = searchMode === 'flights';
+  const isDestination = searchMode === 'explore' || searchMode === 'airport' || isFlights;
   const pinnedKeys = new Set(pinned.map((p) => p.key));
   const isPinLimitReached = pinned.length >= MAX_PINS;
+
+  const trimmed = query.trim();
+  const airportMatches = useMemo(
+    () => (isAirport && trimmed.length >= MIN_QUERY ? searchAirports(trimmed, airports) : []),
+    [isAirport, trimmed, airports],
+  );
+  // Geocoding already drops built-in bans; this also hides the user's own picks.
+  const visibleMatches = matches.filter(
+    (m) => !isBanned({ country: m.country, countryCode: m.countryCode }),
+  );
 
   useEffect(() => {
     if (isOpen) inputRef.current?.focus();
   }, [isOpen]);
 
+  // Geocoding only backs the place modes; airports search a bundled list
+  // locally and the flights tab has its own pickers.
   useEffect(() => {
-    if (!isOpen) return;
-    const trimmed = query.trim();
-    if (trimmed.length < 2) {
+    if (!isOpen || isAirport || isFlights) return;
+    if (trimmed.length < MIN_QUERY) {
       setMatches([]);
       setSearching(false);
       return;
@@ -75,7 +112,7 @@ export function SearchDialog() {
       cancelled = true;
       clearTimeout(handle);
     };
-  }, [query, isOpen]);
+  }, [trimmed, isOpen, isAirport]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -88,7 +125,25 @@ export function SearchDialog() {
 
   if (!isOpen) return null;
 
-  const pickPrimary = (match: GeoMatch) => {
+  const title =
+    searchMode === 'origin'
+      ? 'Where are you starting from?'
+      : isAirport
+        ? 'Find an airport'
+        : isFlights
+          ? 'Find flights'
+          : 'Explore a destination';
+  const placeholder = isAirport ? 'Airport code or name - e.g. FRA' : 'Search a city or town…';
+  const ariaLabel =
+    searchMode === 'origin'
+      ? 'Set your starting point'
+      : isAirport
+        ? 'Find an airport'
+        : isFlights
+          ? 'Search flight prices'
+          : 'Add a place of interest';
+
+  const pickPlace = (match: GeoMatch) => {
     if (searchMode === 'origin') {
       setOrigin({ lat: match.lat, lon: match.lon, label: match.name });
     } else {
@@ -103,10 +158,24 @@ export function SearchDialog() {
     setMatches([]);
   };
 
-  const togglePin = (match: GeoMatch) => {
+  const togglePlacePin = (match: GeoMatch) => {
     const key = `p${match.id}`;
     if (pinnedKeys.has(key)) removePin(key);
     else addPin(matchToPlace(match));
+  };
+
+  const pickAirport = (airport: Airport) => {
+    const watchKey = airportPinKey(airport);
+    if (pinnedKeys.has(watchKey)) selectPlace(watchKey);
+    else setPreviewPlace(airportToPlace(airport));
+    closeSearch();
+    setQuery('');
+  };
+
+  const toggleAirportPin = (airport: Airport) => {
+    const key = airportPinKey(airport);
+    if (pinnedKeys.has(key)) removePin(key);
+    else addPin({ ...airportToPlace(airport), kind: 'pin', key });
   };
 
   return (
@@ -114,20 +183,29 @@ export function SearchDialog() {
       <div
         className="search-dialog"
         role="dialog"
-        aria-label={searchMode === 'origin' ? 'Set your starting point' : 'Add a place of interest'}
+        aria-label={ariaLabel}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="search-title">
-          {searchMode === 'origin' ? 'Where are you starting from?' : 'Explore a destination'}
-        </h2>
-        <input
-          ref={inputRef}
-          className="search-input"
-          type="search"
-          placeholder="Search a city or town…"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <h2 className="search-title">{title}</h2>
+        {isDestination && (
+          <Segmented
+            options={DEST_TABS}
+            value={searchMode as DestMode}
+            onChange={(mode) => openSearch(mode)}
+            ariaLabel="Search places, airports, or flights"
+            variant="inset"
+          />
+        )}
+        {!isFlights && (
+          <input
+            ref={inputRef}
+            className="search-input"
+            type="search"
+            placeholder={placeholder}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+        )}
         {searchMode === 'origin' && (
           <button type="button" className="search-locate" onClick={locate} disabled={geoStatus === 'locating'}>
             <MapPin size={15} aria-hidden /> {geoStatus === 'locating' ? 'Locating…' : 'Use my location'}
@@ -140,36 +218,78 @@ export function SearchDialog() {
             {isPinLimitReached && ` You're watching ${MAX_PINS} places - the max.`}
           </p>
         )}
+        {isAirport && (
+          <p className="search-hint">
+            Look up any airport with scheduled flights by IATA/ICAO code or name. Tap for its
+            forecast, official site, and Wikipedia.
+          </p>
+        )}
         {geoError && <p className="search-error">{geoError}</p>}
         {searchError && <p className="search-error">{searchError}</p>}
         {isSearching && <p className="search-hint">Searching…</p>}
-        <ul className="search-results">
-          {matches.map((match) => {
-            const isPinned = pinnedKeys.has(`p${match.id}`);
-            return (
-              <li key={match.id} className="search-result-row">
-                <button type="button" className="search-result" onClick={() => pickPrimary(match)}>
-                  <span className="search-result-name">
-                    {countryFlag(match.country.length === 2 ? match.country : '')} {match.name}
-                  </span>
-                  <span className="search-result-meta">
-                    {[match.admin1, match.country].filter(Boolean).join(', ')}
-                    {searchMode === 'origin' ? ' · tap to start here' : ' · tap for details'}
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  className={`pin-toggle${isPinned ? ' is-pinned' : ''}`}
-                  aria-label={isPinned ? `Stop watching ${match.name}` : `Watch ${match.name}`}
-                  disabled={!isPinned && isPinLimitReached}
-                  onClick={() => togglePin(match)}
-                >
-                  <Star size={18} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        {isAirport && airportsLoading && trimmed.length >= MIN_QUERY && (
+          <p className="search-hint">Loading airport list…</p>
+        )}
+
+        {isFlights ? (
+          <FlightSearch />
+        ) : isAirport ? (
+          <ul className="search-results">
+            {airportMatches.map((airport) => {
+              const isWatched = pinnedKeys.has(airportPinKey(airport));
+              return (
+                <li key={airport.key} className="search-result-row">
+                  <button type="button" className="search-result" onClick={() => pickAirport(airport)}>
+                    <span className="search-result-name">
+                      {airport.iata && <span className="search-result-code">{airport.iata}</span>}
+                      {countryFlag(airport.country)} {airport.name}
+                    </span>
+                    <span className="search-result-meta">
+                      {[airport.municipality, airport.country].filter(Boolean).join(', ')} · tap for details
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`pin-toggle${isWatched ? ' is-pinned' : ''}`}
+                    aria-label={isWatched ? `Stop watching ${airport.name}` : `Watch ${airport.name}`}
+                    disabled={!isWatched && isPinLimitReached}
+                    onClick={() => toggleAirportPin(airport)}
+                  >
+                    <Star size={18} strokeWidth={2} fill={isWatched ? 'currentColor' : 'none'} aria-hidden />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <ul className="search-results">
+            {visibleMatches.map((match) => {
+              const isPinned = pinnedKeys.has(`p${match.id}`);
+              return (
+                <li key={match.id} className="search-result-row">
+                  <button type="button" className="search-result" onClick={() => pickPlace(match)}>
+                    <span className="search-result-name">
+                      {countryFlag(match.country.length === 2 ? match.country : '')} {match.name}
+                    </span>
+                    <span className="search-result-meta">
+                      {[match.admin1, match.country].filter(Boolean).join(', ')}
+                      {searchMode === 'origin' ? ' · tap to start here' : ' · tap for details'}
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`pin-toggle${isPinned ? ' is-pinned' : ''}`}
+                    aria-label={isPinned ? `Stop watching ${match.name}` : `Watch ${match.name}`}
+                    disabled={!isPinned && isPinLimitReached}
+                    onClick={() => togglePlacePin(match)}
+                  >
+                    <Star size={18} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
     </div>
   );

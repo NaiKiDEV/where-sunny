@@ -1,3 +1,4 @@
+import { isBannedPlace } from '../bannedCountries';
 import { haversineKm } from '../geo';
 import type { Candidate, LatLon, Place } from '../types';
 import type { TierConfig } from './tiers';
@@ -18,6 +19,8 @@ export function selectCandidates(cities: Place[], origin: LatLon, tier: TierConf
 
   const within: Candidate[] = [];
   for (const place of cities) {
+    // Belt-and-suspenders: even an unfiltered list can never yield a banned place.
+    if (isBannedPlace(place)) continue;
     if (place.population < tier.minPopulation) continue;
     // cheap bounding-box reject (antimeridian-aware) before the exact distance
     if (Math.abs(place.lat - origin.lat) > latDelta) continue;

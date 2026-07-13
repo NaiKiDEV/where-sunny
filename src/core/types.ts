@@ -7,19 +7,55 @@ export interface Origin extends LatLon {
   label: string;
 }
 
-/** 'city' = bundled dataset candidate, 'pin' = user place of interest, 'home' = origin. */
-export type PlaceKind = 'city' | 'pin' | 'home';
+/**
+ * 'city' = bundled dataset candidate, 'pin' = user place of interest,
+ * 'home' = origin, 'airport' = bundled airport (OurAirports).
+ */
+export type PlaceKind = 'city' | 'pin' | 'home' | 'airport';
+
+/**
+ * Airport-only metadata, carried on a Place when `kind === 'airport'` (and on a
+ * pin cloned from one). Sourced from OurAirports; see core/airports.
+ */
+export interface AirportMeta {
+  /** IATA code (e.g. `FRA`); `''` when the airport has none. */
+  iata: string;
+  /** ICAO code (e.g. `EDDF`); `''` when unknown. */
+  icao: string;
+  /** ISO 3166-2 subdivision (e.g. `DE-HE`); `''` when unknown. */
+  region: string;
+  /** Served city/town (e.g. `Frankfurt am Main`); `''` when unknown. */
+  municipality: string;
+  /** Official airport website. Present for ~40% of airports. */
+  home?: string;
+  /** Wikipedia article. Present for nearly all airports. */
+  wiki?: string;
+  /** `large_airport` (true) vs `medium_airport`/`small_airport` (false) - drives map emphasis. */
+  large: boolean;
+  /** Number of open runways (OurAirports runways.csv). Undefined when unknown. */
+  runways?: number;
+  /** Longest open runway in metres. Undefined when unknown. */
+  longestRunwayM?: number;
+}
 
 export interface Place extends LatLon {
-  /** Namespaced unique key: `c{datasetIndex}`, `p{geonameId}`, or `home`. */
+  /** Namespaced unique key: `c{datasetIndex}`, `p{geonameId}`, `a{icao|iata}`, or `home`. */
   key: string;
   kind: PlaceKind;
   name: string;
   country: string;
+  /**
+   * ISO 3166-1 alpha-2 code, uppercase, when known (geocoded/pinned places).
+   * Bundled cities carry the code in `country` instead, so ban checks fall back
+   * to it - see codeOf() in core/bannedCountries.
+   */
+  countryCode?: string;
   population: number;
   admin1?: string;
   /** Metres above sea level (GeoNames `dem` / geocoding elevation). Undefined if unknown. */
   elevation?: number;
+  /** Set only when `kind === 'airport'` (or a pin cloned from an airport). */
+  airport?: AirportMeta;
 }
 
 export interface DayForecast {

@@ -6,7 +6,7 @@ const BASE = 'http://localhost:5173';
 const OUT = process.argv[2] ?? '.';
 const SEEDED_STATE = JSON.stringify({
   state: { origin: { lat: 54.687, lon: 25.28, label: 'Vilnius' }, tier: 'day', timeWindow: 'today' },
-  version: 0,
+  version: 1,
 });
 
 async function launch() {
@@ -39,7 +39,6 @@ async function newPage(viewport, seedOrigin) {
   return page;
 }
 
-// 1. welcome overlay (no origin)
 const welcome = await newPage({ width: 390, height: 844 }, false);
 await welcome.goto(BASE, { waitUntil: 'networkidle' });
 await welcome.waitForSelector('.welcome-title', { timeout: 15000 });
@@ -48,7 +47,6 @@ await welcome.screenshot({ path: `${OUT}/01-welcome-mobile.png` });
 console.log('welcome overlay: rendered');
 await welcome.context().close();
 
-// 2. mobile with seeded origin — full live pipeline
 const mobile = await newPage({ width: 390, height: 844 }, true);
 await mobile.goto(BASE, { waitUntil: 'networkidle' });
 await mobile.waitForSelector('.place-card', { timeout: 30000 });
@@ -58,7 +56,6 @@ const homeAnchor = await mobile.locator('.home-anchor-verdict').textContent();
 console.log(`mobile results: ${cardCount} cards, home verdict: "${homeAnchor}"`);
 await mobile.screenshot({ path: `${OUT}/02-results-mobile.png` });
 
-// 3. tap first card -> detail view with insight (consensus + hourly timeline)
 await mobile.locator('.place-card').first().click();
 await mobile.waitForSelector('.place-detail-name', { timeout: 5000 });
 const detailName = await mobile.locator('.place-detail-name').textContent();
@@ -70,7 +67,6 @@ console.log(`detail view: "${detailName.trim()}", consensus: "${consensusLevel}"
 await mobile.waitForTimeout(600);
 await mobile.screenshot({ path: `${OUT}/03-detail-mobile.png` });
 
-// 4. pin flow: back -> "Watch a place" -> search Akmenė -> pinned detail
 await mobile.locator('.back-button').click();
 await mobile.locator('.section-action').click();
 await mobile.waitForSelector('.search-input', { timeout: 5000 });
@@ -90,11 +86,12 @@ console.log(`interests section: ${pinCount} pinned place(s)`);
 await mobile.screenshot({ path: `${OUT}/06-interests-mobile.png` });
 await mobile.context().close();
 
-// 4. desktop layout, weekend window
 const desktop = await newPage({ width: 1440, height: 900 }, true);
 await desktop.goto(BASE, { waitUntil: 'networkidle' });
 await desktop.waitForSelector('.place-card', { timeout: 30000 });
-await desktop.locator('.segmented-option', { hasText: 'Weekend' }).first().click();
+// Open the "When" filter chip and pick Weekend from its popover list.
+await desktop.getByRole('button', { name: 'When' }).click();
+await desktop.locator('.menu-item', { hasText: 'Weekend' }).click();
 await desktop.waitForTimeout(3500);
 const desktopCards = await desktop.locator('.place-card').count();
 console.log(`desktop weekend results: ${desktopCards} cards`);

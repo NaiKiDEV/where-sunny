@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import type { HourPoint } from '../../core/weather/hourly';
 import { formatTemp } from '../../lib/format';
+import { useAppStore } from '../../state/store';
 
 const RAIN_THRESHOLD = 40;
 
@@ -28,6 +29,7 @@ function formatHour(hour: number): string {
  */
 export function SunTimeline({ hours }: { hours: HourPoint[] }) {
   const trackRef = useRef<HTMLDivElement>(null);
+  const unit = useAppStore((s) => s.unit);
   const [activeHour, setActiveHour] = useState<number | null>(null);
 
   if (hours.length === 0) return null;
@@ -52,7 +54,7 @@ export function SunTimeline({ hours }: { hours: HourPoint[] }) {
             <span className="sun-timeline-readout-time">{formatHour(active.hour)}</span>
             <span className="sun-timeline-readout-stats">
               {active.isDay ? `${active.cloud}% cloud` : 'Night'} · {active.precipProb}% rain ·{' '}
-              {formatTemp(active.temp)}
+              {formatTemp(active.temp, unit)}
             </span>
           </>
         ) : (
@@ -79,7 +81,7 @@ export function SunTimeline({ hours }: { hours: HourPoint[] }) {
             style={{ background: hourColor(point) }}
             aria-label={`${formatHour(point.hour)}: ${
               point.isDay
-                ? `${point.cloud}% cloud, ${point.precipProb}% rain, ${formatTemp(point.temp)}`
+                ? `${point.cloud}% cloud, ${point.precipProb}% rain, ${formatTemp(point.temp, unit)}`
                 : 'night'
             }`}
             onFocus={() => setActiveHour(point.hour)}

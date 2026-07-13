@@ -26,7 +26,7 @@ describe('addStop / removeStop', () => {
     let t = trip();
     t = addStop(t, place('a', 0, 0));
     t = addStop(t, place('b', 1, 1));
-    t = addStop(t, place('a', 0, 0)); // dup
+    t = addStop(t, place('a', 0, 0));
     expect(t.stops.map((s) => s.placeKey)).toEqual(['a', 'b']);
   });
 
@@ -41,18 +41,18 @@ describe('addStop / removeStop', () => {
 describe('days', () => {
   it('lands new stops on the current last day', () => {
     let t = trip();
-    t = addStop(t, place('a', 0, 0)); // day 1
-    t = addStop(t, place('b', 1, 1)); // groups onto day 1
+    t = addStop(t, place('a', 0, 0));
+    t = addStop(t, place('b', 1, 1));
     expect(tripDayCount(t)).toBe(1);
-    t = moveStopDay(t, 'b', 1); // b -> day 2
+    t = moveStopDay(t, 'b', 1);
     t = addStop(t, place('c', 2, 2)); // lands on the last day (2)
     expect(stopDay(t.stops.find((s) => s.placeKey === 'c')!)).toBe(2);
   });
 
   it('moves a stop to a new day, then compacts gaps on removal', () => {
     let t = trip();
-    ['a', 'b', 'c'].forEach((k, i) => (t = addStop(t, place(k, i, i)))); // all day 1
-    t = moveStopDay(t, 'c', 1); // c -> day 2
+    ['a', 'b', 'c'].forEach((k, i) => (t = addStop(t, place(k, i, i))));
+    t = moveStopDay(t, 'c', 1);
     expect(stopDay(t.stops.find((s) => s.placeKey === 'c')!)).toBe(2);
     expect(tripDayCount(t)).toBe(2);
     t = removeStop(t, 'a'); // day 1 still has b, no gap
@@ -64,7 +64,7 @@ describe('days', () => {
   it('orders stops by day then insertion order', () => {
     let t = trip();
     ['a', 'b', 'c'].forEach((k, i) => (t = addStop(t, place(k, i, i))));
-    t = moveStopDay(t, 'a', 1); // a -> day 2
+    t = moveStopDay(t, 'a', 1);
     expect(orderedStops(t).map((s) => s.placeKey)).toEqual(['b', 'c', 'a']);
   });
 });

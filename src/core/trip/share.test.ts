@@ -33,6 +33,28 @@ describe('encodeTrip / decodeSharedTrip', () => {
     expect(decoded!.stops[0].place.elevation).toBe(1560);
     expect(decoded!.stops[1].place.elevation).toBeUndefined();
     expect(decoded!.stops[0].place.lat).toBeCloseTo(46.8, 3);
+    // Backward compatible: stops encoded without `cc` decode with no countryCode.
+    expect(decoded!.stops[0].place.countryCode).toBeUndefined();
+  });
+
+  it('round-trips countryCode when a stop carries one', () => {
+    const withCode: Place = {
+      key: 'p1',
+      kind: 'pin',
+      name: 'Nice',
+      country: 'France',
+      countryCode: 'FR',
+      lat: 43.7,
+      lon: 7.26,
+      population: 340000,
+    };
+    let trip: Trip = { id: 't2', name: 'Riviera', stops: [], createdAt: '2026-07-12T00:00:00Z' };
+    trip = addStop(trip, withCode);
+
+    const decoded = decodeSharedTrip(encodeTrip(trip));
+    expect(decoded).not.toBeNull();
+    expect(decoded!.stops[0].place.countryCode).toBe('FR');
+    expect(decoded!.stops[0].place.country).toBe('France');
   });
 
   it('returns null for garbage input', () => {
