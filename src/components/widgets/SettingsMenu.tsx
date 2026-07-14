@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Ban, HelpCircle, Settings } from "lucide-react";
 import { ANY_COMFORT_ID, COMFORT_PRESETS } from "../../core/scoring/score";
 import { formatTempBare, type TempUnit } from "../../lib/format";
@@ -25,7 +24,12 @@ export function SettingsMenu() {
   const setComfort = useAppStore((s) => s.setComfort);
   const openScoreInfo = useAppStore((s) => s.openScoreInfo);
   const openBannedManager = useAppStore((s) => s.openBannedManager);
-  const [isOpen, setOpen] = useState(false);
+  // Open state lives in the store (not local) so the mobile results drawer can
+  // unmount while this menu is open - vaul's focus guard otherwise steals focus
+  // from the currency picker's search input, leaving it untypeable on mobile.
+  const isOpen = useAppStore((s) => s.settingsOpen);
+  const openSettings = useAppStore((s) => s.openSettings);
+  const closeSettings = useAppStore((s) => s.closeSettings);
 
   const active =
     COMFORT_PRESETS.find(
@@ -40,13 +44,13 @@ export function SettingsMenu() {
         aria-label="Settings"
         aria-haspopup="dialog"
         aria-expanded={isOpen}
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => (isOpen ? closeSettings() : openSettings())}
       >
         <Settings size={18} strokeWidth={2} aria-hidden />
       </button>
       {isOpen && (
         <>
-          <div className="menu-backdrop" onClick={() => setOpen(false)} />
+          <div className="menu-backdrop" onClick={closeSettings} />
           <div
             className="menu-popover settings-popover"
             role="dialog"
@@ -111,7 +115,7 @@ export function SettingsMenu() {
               className="menu-item settings-help"
               onClick={() => {
                 openScoreInfo();
-                setOpen(false);
+                closeSettings();
               }}
             >
               <span className="menu-item-icon" aria-hidden>
@@ -131,7 +135,7 @@ export function SettingsMenu() {
               className="menu-item settings-help"
               onClick={() => {
                 openBannedManager();
-                setOpen(false);
+                closeSettings();
               }}
             >
               <span className="menu-item-icon" aria-hidden>

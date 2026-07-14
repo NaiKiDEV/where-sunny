@@ -75,6 +75,7 @@ export function MapView({ results, pinned, airports }: MapViewProps) {
   // Keyed lookup so the (once-registered) click handler can resolve an airport
   // hit to its full record without re-subscribing to the airports array.
   const airportsByKey = useRef<Map<string, Airport>>(new Map());
+  const overlayFrameRef = useRef<number | null>(null);
   const [isMapReady, setMapReady] = useState(false);
 
   const origin = useAppStore((s) => s.origin);
@@ -191,8 +192,23 @@ export function MapView({ results, pinned, airports }: MapViewProps) {
     };
   }, [isMapReady, bannedCodes]);
 
+  // Coalesce overlay refreshes to one per frame: as forecasts stream in,
+  // results/pinned change in bursts and each field rebuild kicks off an async
+  // image decode. Superseding an in-flight decode makes MapLibre log an aborted
+  // "source image could not be decoded" error, so collapse bursts to the latest.
   useEffect(() => {
-    if (isMapReady && mapRef.current) updateOverlay(mapRef.current, results, pinned, overlay, overlayStyle);
+    if (!isMapReady || !mapRef.current) return;
+    if (overlayFrameRef.current !== null) cancelAnimationFrame(overlayFrameRef.current);
+    overlayFrameRef.current = requestAnimationFrame(() => {
+      overlayFrameRef.current = null;
+      if (mapRef.current) updateOverlay(mapRef.current, results, pinned, overlay, overlayStyle);
+    });
+    return () => {
+      if (overlayFrameRef.current !== null) {
+        cancelAnimationFrame(overlayFrameRef.current);
+        overlayFrameRef.current = null;
+      }
+    };
   }, [isMapReady, results, pinned, overlay, overlayStyle]);
 
   useEffect(() => {

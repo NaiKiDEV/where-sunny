@@ -1,3 +1,4 @@
+import { MapLegend } from '../components/map/MapLegend';
 import { MapView } from '../components/map/MapView';
 import { ResultsPanel } from '../components/panel/ResultsPanel';
 import { BannedCountriesSheet } from '../components/widgets/BannedCountriesSheet';
@@ -9,6 +10,7 @@ import { WelcomeOverlay } from '../components/widgets/WelcomeOverlay';
 import { useAirports } from '../hooks/useAirports';
 import { useIsMobile } from '../hooks/useMediaQuery';
 import { usePinnedPlaces } from '../hooks/usePinnedPlaces';
+import { useSharedPlace } from '../hooks/useSharedPlace';
 import { useSharedTrip } from '../hooks/useSharedTrip';
 import { useSunnyPlaces } from '../hooks/useSunnyPlaces';
 import { useAppStore } from '../state/store';
@@ -17,6 +19,7 @@ export default function App() {
   const origin = useAppStore((s) => s.origin);
   const isMobile = useIsMobile();
   useSharedTrip();
+  useSharedPlace();
   const { results, home, isLoading, isFetching, error } = useSunnyPlaces();
   const { pinnedScored, isLoading: isPinsLoading } = usePinnedPlaces();
   const { airports } = useAirports();
@@ -47,6 +50,7 @@ export default function App() {
             isLoading={isLoading}
             error={error}
           />
+          <MapLegend />
         </>
       ) : (
         <WelcomeOverlay />

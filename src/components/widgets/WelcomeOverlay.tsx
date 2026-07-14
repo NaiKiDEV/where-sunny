@@ -1,6 +1,7 @@
 import { Sun } from 'lucide-react';
 import { useGeolocation } from '../../hooks/useGeolocation';
 import { useAppStore } from '../../state/store';
+import { SuggestedDestinations } from './SuggestedDestinations';
 
 export function WelcomeOverlay() {
   const openSearch = useAppStore((s) => s.openSearch);
@@ -23,6 +24,7 @@ export function WelcomeOverlay() {
           </button>
         </div>
         {error && <p className="welcome-error">{error}</p>}
+        <SuggestedDestinations />
         <p className="welcome-attribution">
           Weather by Open-Meteo · Places from GeoNames · Map © OpenStreetMap contributors
         </p>

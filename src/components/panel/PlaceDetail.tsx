@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft, MapPin, Route, Star } from 'lucide-react';
+import { ChevronLeft, MapPin, Navigation, Route, Star } from 'lucide-react';
 import type { ScoredDay, ScoredPlace } from '../../core/types';
 import { isNotableTerrain, terrainOf, TERRAIN_LABEL } from '../../core/candidates/feature';
 import { usePlaceInsight } from '../../hooks/usePlaceInsight';
@@ -22,8 +22,11 @@ import { scoreWord } from '../../lib/scoreLabel';
 import { weatherVisual } from '../../lib/weatherIcon';
 import { useAppStore } from '../../state/store';
 import { FlightLinks } from '../flights/FlightLinks';
+import { CalendarNote } from './CalendarNote';
 import { ConsensusBlock } from './ConsensusBlock';
+import { NearbyPoi } from './NearbyPoi';
 import { ScoreBreakdown } from './ScoreBreakdown';
+import { SharePlaceButton } from './SharePlaceButton';
 import { SunTimeline } from './SunTimeline';
 
 function DayChip({
@@ -145,6 +148,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
               <Star size={15} strokeWidth={2} fill={isPinned ? 'currentColor' : 'none'} aria-hidden />
               {isPinned ? 'Watching' : 'Watch'}
             </button>
+            <SharePlaceButton place={place} />
           </div>
         )}
       </header>
@@ -275,7 +279,17 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
 
       <ScoreBreakdown day={day} />
 
+      {!isHome && (
+        <CalendarNote
+          place={place}
+          activeDate={day.date}
+          windowDates={scored.windowDays.map((d) => d.date)}
+        />
+      )}
+
       <ConsensusBlock consensus={consensus} isLoading={insight.isLoadingConsensus} />
+
+      {place.kind !== 'airport' && <NearbyPoi coords={place} />}
 
       {!isHome && <FlightLinks place={place} date={day.date} />}
 
@@ -287,7 +301,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
             target="_blank"
             rel="noopener noreferrer"
           >
-            Directions →
+            <Navigation size={15} aria-hidden /> Directions
           </a>
           <button type="button" className="detail-action-secondary" onClick={startFromHere}>
             <MapPin size={15} aria-hidden /> Start from here

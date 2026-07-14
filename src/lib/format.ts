@@ -61,6 +61,19 @@ export function dayLabel(isoDate: string, now = new Date()): string {
   return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short' });
 }
 
+/**
+ * A concrete calendar date with weekday ("Fri, 1 Aug"). Unlike dayLabel it never
+ * collapses to "Today"/weekday-only, so dates weeks or months out stay distinct.
+ */
+export function formatWeekendDate(isoDate: string): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+}
+
 /** Two-letter ISO country code → emoji flag. */
 export function countryFlag(countryCode: string): string {
   if (!/^[A-Za-z]{2}$/.test(countryCode)) return '';

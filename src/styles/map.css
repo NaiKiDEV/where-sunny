@@ -59,3 +59,69 @@
 .maplibregl-ctrl-attrib a {
   color: var(--color-ink-soft);
 }
+
+/* ============ map score legend (desktop only) ============ */
+/* The full-height side panel owns the left column and maplibre's attribution
+   owns the bottom-right, so the card sits at the bottom just past the panel's
+   right edge - aligned with where .top-controls begins. Hidden on mobile, where
+   the results drawer covers the bottom. The wrapper never eats map drags. */
+.map-legend {
+  position: absolute;
+  left: calc(var(--panel-width) + var(--space-5) + var(--space-3));
+  bottom: calc(var(--space-3) + var(--safe-bottom));
+  z-index: var(--z-controls);
+  pointer-events: none;
+}
+
+.map-legend > * {
+  pointer-events: auto;
+}
+
+.map-legend-card {
+  width: 168px;
+  padding: var(--space-2) var(--space-3) var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-veil);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-chip);
+}
+
+.map-legend-title {
+  margin-bottom: var(--space-2);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-faint);
+}
+
+.map-legend-scale {
+  display: block;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 1px var(--color-line);
+}
+
+.map-legend-ends {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink-soft);
+}
+
+/* Dark OS preference: the app palette stays warm, so only firm up contrast and
+   depth here so the key keeps reading over darker map tiles. */
+@media (prefers-color-scheme: dark) {
+  .map-legend-card {
+    box-shadow:
+      0 12px 32px rgba(0, 0, 0, 0.45),
+      0 2px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  .map-legend-scale {
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  }
+}

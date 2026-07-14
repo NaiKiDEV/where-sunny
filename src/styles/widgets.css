@@ -1267,6 +1267,130 @@
   align-items: center;
 }
 
+/* ============ explore empty state (recents + suggestions) ============ */
+/* One coherent surface used in the explore search dialog: recent places first
+   (when any), then curated sunny suggestions. SuggestedDestinations is also
+   reused standalone on the welcome overlay. Colors come from theme tokens, so
+   both light and dark render correctly with no per-theme overrides. */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.recent-head,
+.suggest-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-faint);
+}
+
+.recent-head svg,
+.suggest-head svg {
+  color: var(--color-sun-600);
+}
+
+.suggest {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+}
+
+.suggest-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.suggest-region {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  color: var(--color-ink-soft);
+}
+
+.suggest-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.suggest-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--color-line);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: var(--text-sm);
+  line-height: 1;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.suggest-chip:hover {
+  transform: translateY(-1px);
+  border-color: var(--color-sun-500);
+  background: var(--color-sun-100);
+  box-shadow: var(--shadow-chip);
+}
+
+.suggest-chip:focus-visible {
+  outline: none;
+  border-color: var(--color-sun-600);
+  box-shadow: 0 0 0 3px var(--color-sun-100);
+}
+
+.suggest-chip:active {
+  transform: translateY(0);
+}
+
+.suggest-chip-flag {
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+.suggest-chip-name {
+  font-weight: 650;
+}
+
+.suggest-chip-country {
+  color: var(--color-ink-faint);
+  font-size: var(--text-xs);
+}
+
+/* On the centered welcome card the suggestions read as a centered block, not a
+   left-aligned list; the search dialog keeps the default left alignment. */
+.welcome-card .suggest {
+  margin-top: var(--space-2);
+}
+
+.welcome-card .suggest-head,
+.welcome-card .suggest-region,
+.welcome-card .suggest-chips {
+  justify-content: center;
+}
+
+.welcome-card .suggest-region {
+  text-align: center;
+}
+
 /* IATA code badge in airport search results */
 .search-result-code {
   display: inline-block;

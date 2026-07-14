@@ -17,6 +17,23 @@ export interface FieldImage {
 // so a modest grid still reads perfectly smooth.
 const GRID = 96;
 const BASE_ALPHA = 0.6;
+// Fraction of the grid, at each border, over which the field fades fully out.
+const EDGE_FADE = 0.14;
+
+/**
+ * Smoothstep envelope that drives the grid's outer frame to fully transparent,
+ * so the rasterized field always dissolves into the map rather than ending on
+ * the image's hard rectangular border. Returns 0 at the very edge and ramps to
+ * 1 once past the fade band. Pure (no canvas) so it is unit-testable.
+ */
+export function edgeEnvelope(x: number, y: number, grid: number): number {
+  const fx = Math.min(x, grid - 1 - x) / (grid - 1); // 0 at a border cell → 0.5 mid-grid
+  const fy = Math.min(y, grid - 1 - y) / (grid - 1);
+  const e = Math.min(fx, fy) / EDGE_FADE;
+  if (e <= 0) return 0;
+  if (e >= 1) return 1;
+  return e * e * (3 - 2 * e);
+}
 
 type Rgb = [number, number, number];
 
@@ -119,8 +136,10 @@ export function computeFieldImage(points: FieldPoint[], mode: OverlayMode): Fiel
       }
       const value = wsum > 0 ? vsum / wsum : 0;
       const coverage = Math.exp(-dmin2 / twoSigma2);
-      // Fill the whole covered area, but let higher values read stronger.
-      const alpha = BASE_ALPHA * coverage * (0.45 + 0.55 * (value / 100));
+      // Fill the whole covered area, but let higher values read stronger, and
+      // force the image's own edges to zero so it never shows a hard rectangle.
+      const alpha =
+        BASE_ALPHA * coverage * (0.45 + 0.55 * (value / 100)) * edgeEnvelope(x, y, GRID);
       const [r, g, b] = ramp(stops, value);
       const idx = (y * GRID + x) * 4;
       data[idx] = r;

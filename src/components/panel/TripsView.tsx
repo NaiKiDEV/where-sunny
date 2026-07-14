@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  CalendarDays,
   ChevronDown,
   ChevronLeft,
   ChevronUp,
@@ -23,7 +24,9 @@ import {
   type Trip,
   type TripStop,
 } from '../../core/trip/trip';
+import type { Place } from '../../core/types';
 import { useBannedFilter } from '../../hooks/useBannedFilter';
+import { useCountryCalendar } from '../../hooks/useCountryCalendar';
 import { useTripPlan, type StopInsight } from '../../hooks/useTripPlan';
 import { countryFlag, dayLabel, formatDistance, formatTemp } from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
@@ -67,6 +70,26 @@ function StopMeta({ insight }: { insight: StopInsight }) {
   );
 }
 
+/**
+ * A small "Holiday" flag when the stop's country has a public holiday on the
+ * day it's planned for. Reuses useCountryCalendar, which dedupes by country in
+ * the TanStack cache, so several stops in one country cost a single fetch.
+ */
+function StopHolidayFlag({ place, date }: { place: Place; date: string }) {
+  const { holidaysByDate } = useCountryCalendar(place);
+  if (!date) return null;
+  const holidays = holidaysByDate.get(date) ?? [];
+  if (holidays.length === 0) return null;
+  return (
+    <span
+      className="trip-stop-holiday"
+      title={holidays.map((h) => h.localName).join(', ')}
+    >
+      <CalendarDays size={13} strokeWidth={2} aria-hidden /> Holiday
+    </span>
+  );
+}
+
 function TripStopRow({
   stop,
   legKm,
@@ -90,6 +113,7 @@ function TripStopRow({
             <TerrainTag elevation={stop.place.elevation} />
           </span>
           {insight && <StopMeta insight={insight} />}
+          {insight && <StopHolidayFlag place={stop.place} date={insight.plan.assignedDate} />}
         </button>
         <span className="trip-stop-actions">
           <button

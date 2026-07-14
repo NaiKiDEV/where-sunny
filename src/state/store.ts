@@ -12,6 +12,9 @@ import type { Origin, Place, TierId, WindowId } from '../core/types';
 
 export const MAX_PINS = 12;
 
+/** Recent searches ring: newest first, deduped by key, capped at this many. */
+export const MAX_RECENT_PLACES = 8;
+
 function generateId(): string {
   try {
     return crypto.randomUUID();
@@ -57,6 +60,9 @@ interface AppState {
   overlay: OverlayMode;
   overlayStyle: OverlayStyle;
   pinned: Place[];
+  /** Recently searched/previewed destinations for the explore empty state
+   * (persisted; most-recent-first, deduped by key, capped at MAX_RECENT_PLACES). */
+  recentPlaces: Place[];
   selectedPlaceKey: string | null;
   /** A searched destination shown in detail without committing (not pinned, not origin). */
   previewPlace: Place | null;
@@ -65,6 +71,7 @@ interface AppState {
   trips: Trip[];
   activeTripId: string | null;
   tripsOpen: boolean; // UI: trips surface is showing (not persisted)
+  settingsOpen: boolean; // UI: settings menu popover is showing (not persisted)
   scoreInfoOpen: boolean; // UI: "how the Sunny Score works" sheet is showing (not persisted)
   /** ISO alpha-2 codes the user chose to ban, layered on top of the built-in list. */
   userBannedCountries: string[];
@@ -80,6 +87,9 @@ interface AppState {
   setOverlayStyle: (style: OverlayStyle) => void;
   addPin: (place: Place) => void;
   removePin: (key: string) => void;
+  /** Record a searched/previewed place at the head of the recents list. Banned
+   * places are ignored; call it from search picks, not from every map tap. */
+  pushRecentPlace: (place: Place) => void;
   selectPlace: (key: string | null) => void;
   setPreviewPlace: (place: Place) => void;
   /** Dismiss whichever detail is open (selected or preview) and return to the list. */
@@ -100,6 +110,8 @@ interface AppState {
   optimizeTripOrder: () => void;
   openTrips: () => void;
   closeTrips: () => void;
+  openSettings: () => void;
+  closeSettings: () => void;
   openScoreInfo: () => void;
   closeScoreInfo: () => void;
   /** Add a country (ISO alpha-2) to the user's ban list; built-ins and dupes are ignored. */
@@ -123,12 +135,14 @@ export const useAppStore = create<AppState>()(
       overlay: 'off',
       overlayStyle: 'field',
       pinned: [],
+      recentPlaces: [],
       selectedPlaceKey: null,
       previewPlace: null,
       searchMode: null,
       trips: [],
       activeTripId: null,
       tripsOpen: false,
+      settingsOpen: false,
       scoreInfoOpen: false,
       userBannedCountries: [],
       bannedManagerOpen: false,
@@ -165,6 +179,12 @@ export const useAppStore = create<AppState>()(
             pinned: state.pinned.filter((p) => p.key !== key),
             selectedPlaceKey: state.selectedPlaceKey === key ? null : state.selectedPlaceKey,
           };
+        }),
+      pushRecentPlace: (place) =>
+        set((state) => {
+          if (isEffectivelyBanned(place, new Set(state.userBannedCountries))) return state;
+          const withoutDupe = state.recentPlaces.filter((p) => p.key !== place.key);
+          return { recentPlaces: [place, ...withoutDupe].slice(0, MAX_RECENT_PLACES) };
         }),
       selectPlace: (selectedPlaceKey) => set({ selectedPlaceKey, previewPlace: null }),
       setPreviewPlace: (previewPlace) =>
@@ -248,6 +268,8 @@ export const useAppStore = create<AppState>()(
         ),
       openTrips: () => set({ tripsOpen: true, selectedPlaceKey: null, previewPlace: null }),
       closeTrips: () => set({ tripsOpen: false }),
+      openSettings: () => set({ settingsOpen: true }),
+      closeSettings: () => set({ settingsOpen: false }),
       openScoreInfo: () => set({ scoreInfoOpen: true }),
       closeScoreInfo: () => set({ scoreInfoOpen: false }),
       addUserBan: (code) =>
@@ -280,6 +302,7 @@ export const useAppStore = create<AppState>()(
         overlay: state.overlay,
         overlayStyle: state.overlayStyle,
         pinned: state.pinned,
+        recentPlaces: state.recentPlaces,
         trips: state.trips,
         activeTripId: state.activeTripId,
         userBannedCountries: state.userBannedCountries,
@@ -292,6 +315,7 @@ export const useAppStore = create<AppState>()(
         return {
           ...merged,
           pinned: merged.pinned.filter((p) => !isBannedPlace(p)),
+          recentPlaces: (merged.recentPlaces ?? []).filter((p) => !isBannedPlace(p)),
           trips: merged.trips.map((trip) => ({
             ...trip,
             stops: trip.stops.filter((stop) => !isBannedPlace(stop.place)),

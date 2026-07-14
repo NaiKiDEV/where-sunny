@@ -12,6 +12,7 @@ import { useGeolocation } from '../../hooks/useGeolocation';
 import { countryFlag } from '../../lib/format';
 import { MAX_PINS, useAppStore } from '../../state/store';
 import { Segmented } from './Segmented';
+import { SearchEmptyState } from './SearchEmptyState';
 
 const SEARCH_DEBOUNCE_MS = 300;
 const MIN_QUERY = 2;
@@ -53,6 +54,7 @@ export function SearchDialog() {
   const removePin = useAppStore((s) => s.removePin);
   const selectPlace = useAppStore((s) => s.selectPlace);
   const setPreviewPlace = useAppStore((s) => s.setPreviewPlace);
+  const pushRecentPlace = useAppStore((s) => s.pushRecentPlace);
   const { locate, status: geoStatus, error: geoError } = useGeolocation();
   const { airports, isLoading: airportsLoading } = useAirports();
   const { isBanned } = useBannedFilter();
@@ -67,6 +69,7 @@ export function SearchDialog() {
   const isAirport = searchMode === 'airport';
   const isFlights = searchMode === 'flights';
   const isDestination = searchMode === 'explore' || searchMode === 'airport' || isFlights;
+  const isExplore = searchMode === 'explore';
   const pinnedKeys = new Set(pinned.map((p) => p.key));
   const isPinLimitReached = pinned.length >= MAX_PINS;
 
@@ -150,6 +153,7 @@ export function SearchDialog() {
       const place = matchToPlace(match);
       // A watched place already has a cached forecast - jump straight to it.
       // Anything else opens as a preview: full details, nothing committed yet.
+      pushRecentPlace(place);
       if (pinnedKeys.has(place.key)) selectPlace(place.key);
       else setPreviewPlace(place);
       closeSearch();
@@ -166,6 +170,8 @@ export function SearchDialog() {
 
   const pickAirport = (airport: Airport) => {
     const watchKey = airportPinKey(airport);
+    // Store the standalone airport Place so recents re-open it as a preview.
+    pushRecentPlace(airportToPlace(airport));
     if (pinnedKeys.has(watchKey)) selectPlace(watchKey);
     else setPreviewPlace(airportToPlace(airport));
     closeSearch();
@@ -233,6 +239,8 @@ export function SearchDialog() {
 
         {isFlights ? (
           <FlightSearch />
+        ) : isExplore && trimmed.length === 0 ? (
+          <SearchEmptyState />
         ) : isAirport ? (
           <ul className="search-results">
             {airportMatches.map((airport) => {

@@ -60,6 +60,8 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   const closeDetail = useAppStore((s) => s.closeDetail);
   const searchMode = useAppStore((s) => s.searchMode);
   const tripsOpen = useAppStore((s) => s.tripsOpen);
+  const bannedManagerOpen = useAppStore((s) => s.bannedManagerOpen);
+  const settingsOpen = useAppStore((s) => s.settingsOpen);
   const preview = usePreviewPlace();
   const [snap, setSnap] = useState<number | string | null>(SNAP_POINTS[1]);
 
@@ -110,9 +112,10 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
     return <aside className="results-panel">{content}</aside>;
   }
 
-  // vaul traps focus even with modal={false}, which makes the search overlay's
-  // input untypeable - unmount the drawer while search is open
-  if (searchMode !== null) return null;
+  // vaul traps focus even with modal={false}, which makes any overlaid text
+  // input untypeable on mobile - unmount the drawer while search, the settings
+  // menu (currency picker search), or the banned-countries manager is open.
+  if (searchMode !== null || settingsOpen || bannedManagerOpen) return null;
 
   return (
     <Drawer.Root
