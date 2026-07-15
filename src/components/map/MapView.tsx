@@ -4,6 +4,7 @@ import maplibregl from 'maplibre-gl';
 import type { Airport } from '../../core/airports/types';
 import { airportToPlace } from '../../core/airports/types';
 import { TRAVEL_TIERS } from '../../core/candidates/tiers';
+import { latestRadarTileUrl, RADAR_REFRESH_MS } from '../../core/radar/rainviewer';
 import type { ScoredPlace } from '../../core/types';
 import { useBannedFilter } from '../../hooks/useBannedFilter';
 import { useIsMobile } from '../../hooks/useMediaQuery';
@@ -21,6 +22,7 @@ import {
   updateRadius,
   type FitPadding,
 } from './mapLayers';
+import { updateRadarLayer } from './radarLayer';
 
 const MAP_STYLE_URL = 'https://tiles.openfreemap.org/styles/liberty';
 const EUROPE_CENTER: [number, number] = [15, 50];
@@ -100,7 +102,7 @@ export function MapView({ results, pinned, airports }: MapViewProps) {
       zoom: startOrigin ? 6 : 3.3,
       attributionControl: {
         compact: true,
-        customAttribution: 'Weather: Open-Meteo · Places: GeoNames · Airports: OurAirports',
+        customAttribution: 'Weather: Open-Meteo · Places: GeoNames · Airports: OurAirports · Radar: RainViewer',
       },
     });
 
@@ -201,7 +203,9 @@ export function MapView({ results, pinned, airports }: MapViewProps) {
     if (overlayFrameRef.current !== null) cancelAnimationFrame(overlayFrameRef.current);
     overlayFrameRef.current = requestAnimationFrame(() => {
       overlayFrameRef.current = null;
-      if (mapRef.current) updateOverlay(mapRef.current, results, pinned, overlay, overlayStyle);
+      // Radar mode paints provider tiles instead, so the forecast wash goes dark.
+      const washMode = overlay === 'radar' ? 'off' : overlay;
+      if (mapRef.current) updateOverlay(mapRef.current, results, pinned, washMode, overlayStyle);
     });
     return () => {
       if (overlayFrameRef.current !== null) {
@@ -210,6 +214,33 @@ export function MapView({ results, pinned, airports }: MapViewProps) {
       }
     };
   }, [isMapReady, results, pinned, overlay, overlayStyle]);
+
+  // Live rain radar: entering radar mode shows the latest RainViewer frame
+  // immediately and then re-checks for a fresher one on a fixed cadence;
+  // leaving hides the layer and stops the timer. Radar is non-critical, so a
+  // failed refresh just keeps the previous frame (or shows nothing yet).
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!isMapReady || !map) return;
+    if (overlay !== 'radar') {
+      updateRadarLayer(map, null);
+      return;
+    }
+    let cancelled = false;
+    const refresh = () => {
+      latestRadarTileUrl()
+        .then((url) => {
+          if (!cancelled && mapRef.current && url) updateRadarLayer(mapRef.current, url);
+        })
+        .catch(() => {});
+    };
+    refresh();
+    const timer = window.setInterval(refresh, RADAR_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      window.clearInterval(timer);
+    };
+  }, [isMapReady, overlay]);
 
   useEffect(() => {
     const map = mapRef.current;

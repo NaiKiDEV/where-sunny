@@ -39,10 +39,12 @@ export function AppProviders({ children }: { children: ReactNode }) {
         maxAge: FORECAST_GC_MS,
         buster: 'v1',
         dehydrateOptions: {
-          // only forecast results are worth persisting; the city dataset is
-          // already cached by the service worker at the HTTP layer
+          // forecasts are worth persisting, and climate normals never change
+          // so they should survive sessions; the city dataset is already
+          // cached by the service worker at the HTTP layer
           shouldDehydrateQuery: (query) =>
-            query.state.status === 'success' && query.queryKey[0] === 'forecasts',
+            query.state.status === 'success' &&
+            (query.queryKey[0] === 'forecasts' || query.queryKey[0] === 'climate-normals'),
         },
       }}
     >

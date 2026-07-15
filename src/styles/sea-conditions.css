@@ -1,0 +1,148 @@
+/* ============ sea conditions (coastal places only) ============ */
+/* Imported by SeaConditions.tsx - kept out of panel.css deliberately.
+   Everything derives from tokens.css variables so both themes stay intentional. */
+
+.sea-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+/* The whole header row is the expand button - one card, chevron on the right,
+   mirroring .air-note-summary / .climate-toggle so the expandables match. */
+.sea-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sea-summary:disabled {
+  cursor: default;
+}
+
+.sea-summary:hover:not(:disabled) {
+  border-color: var(--color-ink-faint);
+}
+
+.sea-summary > svg {
+  flex: none;
+  color: var(--color-sky);
+}
+
+.sea-row-text {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: var(--text-sm);
+}
+
+.sea-row-loading {
+  color: var(--color-ink-faint);
+}
+
+.sea-row-label {
+  font-weight: 650;
+  color: var(--color-ink);
+}
+
+.sea-row-hint {
+  font-weight: 500;
+  color: var(--color-ink-faint);
+}
+
+.sea-wave {
+  color: var(--color-ink-soft);
+}
+
+/* Swim band pill: sea-blue for the bracing end, sun accent for the warm end,
+   built with color-mix on tokens so it adapts to the active theme. */
+.sea-band {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-ink);
+  background: color-mix(in srgb, var(--color-sky) 14%, transparent);
+}
+
+.sea-band-cold {
+  background: color-mix(in srgb, var(--color-sky) 24%, transparent);
+}
+
+.sea-band-pleasant {
+  background: color-mix(in srgb, var(--color-sun-500) 22%, transparent);
+}
+
+.sea-band-warm {
+  background: color-mix(in srgb, var(--color-sun-600) 30%, transparent);
+}
+
+.sea-chevron {
+  flex: none;
+  margin-left: auto;
+  color: var(--color-ink-faint);
+  transition: transform 140ms ease;
+}
+
+.sea-chevron-open {
+  transform: rotate(180deg);
+}
+
+.sea-days {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 0 var(--space-2);
+  list-style: none;
+}
+
+.sea-day {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 3px var(--space-2);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-sm);
+}
+
+.sea-day.is-active {
+  background: color-mix(in srgb, var(--color-sky) 10%, transparent);
+}
+
+.sea-day-label {
+  flex: none;
+  width: 5.5em;
+  color: var(--color-ink-soft);
+}
+
+.sea-day-temp {
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink);
+}
+
+.sea-day-wave {
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-faint);
+}
+
+.sea-day-empty {
+  color: var(--color-ink-faint);
+}

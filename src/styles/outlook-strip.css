@@ -1,0 +1,80 @@
+/* ============ extended outlook (days 8-16, selected place only) ============ */
+/* Imported by OutlookStrip.tsx - kept out of panel.css deliberately.
+   Same silhouette as the main .day-strip / .day-chip, but quieter on purpose:
+   dashed hairline chips on a bare surface so the lower-confidence days read as
+   background trend, not selectable forecast. Tokens only, both themes intentional. */
+
+.outlook {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.outlook-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--color-ink-soft);
+}
+
+.outlook-head svg {
+  flex: none;
+}
+
+.outlook-head-hint {
+  font-weight: 500;
+  color: var(--color-ink-faint);
+}
+
+.outlook-strip {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-1);
+  scrollbar-width: none;
+}
+
+.outlook-strip::-webkit-scrollbar {
+  display: none;
+}
+
+/* Non-interactive by design - unlike .day-chip these days can't be selected. */
+.outlook-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  border: 1px dashed var(--color-line);
+  background: transparent;
+  opacity: 0.85;
+  flex-shrink: 0;
+}
+
+.outlook-chip svg {
+  opacity: 0.75;
+}
+
+.outlook-chip-label {
+  font-size: var(--text-xs);
+  font-weight: 650;
+  color: var(--color-ink-soft);
+  white-space: nowrap;
+}
+
+.outlook-chip-date {
+  font-weight: 500;
+  color: var(--color-ink-faint);
+}
+
+/* Same score ramp as the main strip, slightly dimmed and smaller than the
+   12px .day-chip-dot so the certainty difference is visible at a glance. */
+.outlook-chip-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  opacity: 0.8;
+}

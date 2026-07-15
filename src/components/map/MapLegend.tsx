@@ -1,6 +1,7 @@
 import { SCORE_STOPS } from '../../lib/scoreColor';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useIsMobile } from '../../hooks/useMediaQuery';
+import { useAppStore } from '../../state/store';
 
 /**
  * Colour bands taken straight from the shared score stops, so the key can never
@@ -24,13 +25,40 @@ const LOW_WORD = LEGEND_BANDS[0].word;
 const HIGH_WORD = LEGEND_BANDS[LEGEND_BANDS.length - 1].word;
 
 /**
+ * Approximation of RainViewer's "Universal Blue" ramp (the scheme the radar
+ * tiles use), light drizzle blue through violet downpour. Smooth-blended on
+ * purpose: radar reflectivity is continuous, unlike the discrete score bands.
+ */
+const RADAR_COLORS = ['#8fd7f0', '#4aa5e0', '#2a63c4', '#7a2fa3'];
+const RADAR_GRADIENT = `linear-gradient(90deg, ${RADAR_COLORS.join(', ')})`;
+
+/**
  * Unobtrusive key for the map's score colours, shown at the bottom of the map
  * next to the results panel. Desktop only: on mobile the results drawer covers
  * the bottom of the screen and there is no clean spot to float it, so it hides.
  */
 export function MapLegend() {
   const isMobile = useIsMobile();
+  const overlay = useAppStore((s) => s.overlay);
   if (isMobile) return null;
+
+  if (overlay === 'radar') {
+    return (
+      <div className="map-legend">
+        <div className="map-legend-card">
+          <p className="map-legend-title">Rain radar</p>
+          <span className="map-legend-scale" style={{ background: RADAR_GRADIENT }} aria-hidden />
+          <div className="map-legend-ends" aria-hidden>
+            <span>Drizzle</span>
+            <span>Downpour</span>
+          </div>
+          <span className="visually-hidden">
+            Radar colours run from light blue for drizzle to violet for the heaviest rain.
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="map-legend">

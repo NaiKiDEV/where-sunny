@@ -72,6 +72,22 @@ export interface DayForecast {
   apparentTempMin?: number; // °C
   uvIndexMax?: number; // 0–11+ UV index, peak of day
   windMax?: number; // km/h, max 10 m wind speed
+  // Snow (requested on the single-place path only - see openMeteo.ts PLACE_DAILY_VARS).
+  snowfallSum?: number; // cm, daily snowfall total
+  snowDepthMax?: number; // m, daily max snow depth on the ground
+}
+
+/**
+ * Single-place forecast with response metadata (openMeteo.ts fetchPlaceForecast).
+ * Unlike the batch/grid path, days default to the destination's local calendar
+ * and `timezone` is the place's own IANA zone, so components can show local time.
+ */
+export interface PlaceForecast {
+  days: DayForecast[];
+  /** IANA timezone the days are aggregated on (e.g. `Europe/Zurich`). */
+  timezone: string;
+  /** Offset from UTC in seconds at that timezone, when the API provides it. */
+  utcOffsetSeconds?: number;
 }
 
 export interface ScoredDay extends DayForecast {

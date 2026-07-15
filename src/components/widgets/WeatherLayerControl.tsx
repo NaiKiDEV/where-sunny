@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CloudRain, EyeOff, Layers, Sun, type LucideIcon } from 'lucide-react';
+import { CloudRain, EyeOff, Layers, Radar, Sun, type LucideIcon } from 'lucide-react';
 import { type OverlayMode, type OverlayStyle, useAppStore } from '../../state/store';
 import { Segmented } from './Segmented';
 
@@ -14,6 +14,7 @@ const OVERLAY_OPTIONS: OverlayOption[] = [
   { id: 'off', label: 'No overlay', hint: 'Just the map', Icon: EyeOff },
   { id: 'sun', label: 'Sunshine', hint: 'Where the sun wins', Icon: Sun },
   { id: 'rain', label: 'Cloud & rain', hint: 'Where it turns wet', Icon: CloudRain },
+  { id: 'radar', label: 'Live radar', hint: 'Rain falling right now', Icon: Radar },
 ];
 
 const STYLE_OPTIONS: { id: OverlayStyle; label: string }[] = [
@@ -29,6 +30,9 @@ export function WeatherLayerControl() {
   const setOverlayStyle = useAppStore((s) => s.setOverlayStyle);
   const [isOpen, setOpen] = useState(false);
   const isActive = overlay !== 'off';
+  // The glow/field style picker only applies to the forecast washes; live
+  // radar renders provider tiles and has no style of its own.
+  const hasStylePicker = overlay === 'sun' || overlay === 'rain';
 
   return (
     <div className="layer-control">
@@ -68,7 +72,7 @@ export function WeatherLayerControl() {
                 </span>
               </button>
             ))}
-            {isActive && (
+            {hasStylePicker && (
               <div className="layer-style">
                 <p className="menu-popover-title">Style</p>
                 <Segmented

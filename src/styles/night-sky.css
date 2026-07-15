@@ -1,0 +1,19 @@
+/* Night-sky note (NightSkyNote) - an inset surface strip inside the warm
+   .day-stats card, sharing its shape with .snow-note via .day-conditions. */
+
+.night-sky-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  font-size: var(--text-sm);
+  color: var(--color-ink-soft);
+}
+
+.night-sky-note svg {
+  flex-shrink: 0;
+  color: var(--color-sky);
+}

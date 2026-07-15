@@ -40,8 +40,8 @@ function newTrip(name: string | undefined, origin: Origin | null, count: number)
  */
 export type SearchMode = 'origin' | 'explore' | 'airport' | 'flights';
 
-/** Map weather wash: off, a sunshine field, or a cloud-&-rain field. */
-export type OverlayMode = 'off' | 'sun' | 'rain';
+/** Map weather wash: off, a sunshine field, a cloud-&-rain field, or live rain radar. */
+export type OverlayMode = 'off' | 'sun' | 'rain' | 'radar';
 
 /** How the wash renders: a per-point soft glow, or an interpolated filled field. */
 export type OverlayStyle = 'glow' | 'field';

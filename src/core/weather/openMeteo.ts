@@ -1,6 +1,8 @@
-import type { DayForecast, LatLon } from '../types';
+import type { DayForecast, LatLon, PlaceForecast } from '../types';
 
 export const FORECAST_DAYS = 7;
+/** Open-Meteo free-tier maximum forecast horizon. */
+export const MAX_FORECAST_DAYS = 16;
 const API_BASE = 'https://api.open-meteo.com/v1/forecast';
 const BATCH_SIZE = 100;
 const MAX_ATTEMPTS = 2;
@@ -19,6 +21,12 @@ export const DAILY_VARS = [
   'wind_speed_10m_max',
 ] as const;
 
+/**
+ * Daily variables for the single-place path: everything the grid requests plus
+ * snow. Kept off DAILY_VARS so the batch/grid request shape stays unchanged.
+ */
+export const PLACE_DAILY_VARS = [...DAILY_VARS, 'snowfall_sum', 'snow_depth_max'] as const;
+
 export interface OpenMeteoDaily {
   time?: string[];
   sunshine_duration?: (number | null)[];
@@ -32,10 +40,14 @@ export interface OpenMeteoDaily {
   apparent_temperature_min?: (number | null)[];
   uv_index_max?: (number | null)[];
   wind_speed_10m_max?: (number | null)[];
+  snowfall_sum?: (number | null)[];
+  snow_depth_max?: (number | null)[];
 }
 
 interface OpenMeteoLocation {
   daily?: OpenMeteoDaily;
+  timezone?: string;
+  utc_offset_seconds?: number;
 }
 
 export interface FetchForecastOptions {
@@ -104,6 +116,8 @@ export function mapDaily(daily: OpenMeteoDaily): DayForecast[] {
       apparentTempMin: optionalNum(daily.apparent_temperature_min?.[i]),
       uvIndexMax: optionalNum(daily.uv_index_max?.[i]),
       windMax: optionalNum(daily.wind_speed_10m_max?.[i]),
+      snowfallSum: optionalNum(daily.snowfall_sum?.[i]),
+      snowDepthMax: optionalNum(daily.snow_depth_max?.[i]),
     });
   }
   return days;
@@ -159,4 +173,54 @@ export async function fetchDailyForecasts(
   return settled.flatMap((s, i) =>
     s.status === 'fulfilled' ? s.value : chunks[i].map(() => [] as DayForecast[]),
   );
+}
+
+export interface FetchPlaceForecastOptions {
+  fetchImpl?: typeof fetch;
+  /** Forecast horizon, clamped to 1–MAX_FORECAST_DAYS. Defaults to FORECAST_DAYS. */
+  forecastDays?: number;
+  timezone?: string;
+}
+
+export function buildPlaceForecastUrl(coord: LatLon, days = FORECAST_DAYS, timezone = 'auto'): string {
+  const params = new URLSearchParams({
+    latitude: coord.lat.toFixed(3),
+    longitude: coord.lon.toFixed(3),
+    daily: PLACE_DAILY_VARS.join(','),
+    forecast_days: String(Math.min(Math.max(1, Math.round(days)), MAX_FORECAST_DAYS)),
+    timezone,
+  });
+  return `${API_BASE}?${params}`;
+}
+
+/**
+ * Fetch the forecast for one place, with extras the batch/grid path skips: a
+ * longer horizon (up to MAX_FORECAST_DAYS) and snow variables. Defaults to
+ * `timezone=auto` (destination-local) — unlike fetchDailyForecasts, which pins
+ * the requester's calendar — so the returned `timezone`/`utcOffsetSeconds` are
+ * the place's own and components can show local time. Pass
+ * `timezone: systemTimeZone()` when date alignment with the grid forecast
+ * matters more than local dates.
+ */
+export async function fetchPlaceForecast(
+  coord: LatLon,
+  options: FetchPlaceForecastOptions = {},
+  attempt = 1,
+): Promise<PlaceForecast> {
+  const { fetchImpl = fetch, forecastDays = FORECAST_DAYS, timezone = 'auto' } = options;
+  try {
+    const res = await fetchImpl(buildPlaceForecastUrl(coord, forecastDays, timezone));
+    if (!res.ok) throw new Error(`Open-Meteo request failed: HTTP ${res.status}`);
+    const json: unknown = await res.json();
+    const loc = (Array.isArray(json) ? json[0] : json) as OpenMeteoLocation | undefined;
+    if (!loc) throw new Error('Open-Meteo returned no location');
+    return {
+      days: mapDaily(loc.daily ?? {}),
+      timezone: loc.timezone ?? (timezone === 'auto' ? systemTimeZone() : timezone),
+      utcOffsetSeconds: optionalNum(loc.utc_offset_seconds),
+    };
+  } catch (err) {
+    if (attempt < MAX_ATTEMPTS) return fetchPlaceForecast(coord, options, attempt + 1);
+    throw err instanceof Error ? err : new Error(String(err));
+  }
 }

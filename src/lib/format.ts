@@ -51,6 +51,21 @@ export function uvBand(uv: number): string {
   return 'Extreme';
 }
 
+/**
+ * "Today" or a short weekday name ("Sat") - never "Tomorrow". For dated day
+ * strips where the day after today needs no callout.
+ */
+export function shortDayLabel(isoDate: string, now = new Date()): string {
+  if (isoDate === toLocalIsoDate(now)) return 'Today';
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString(undefined, { weekday: 'short' });
+}
+
+/** Day-of-month from an ISO date ("2026-07-15" → 15). */
+export function dayOfMonth(isoDate: string): number {
+  return Number(isoDate.slice(8, 10));
+}
+
 /** "Today", "Tomorrow", or a short weekday name ("Sat"). */
 export function dayLabel(isoDate: string, now = new Date()): string {
   if (isoDate === toLocalIsoDate(now)) return 'Today';

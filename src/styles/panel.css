@@ -371,6 +371,12 @@
 .day-chip-label {
   font-size: var(--text-xs);
   font-weight: 650;
+  white-space: nowrap;
+}
+
+.day-chip-date {
+  font-weight: 500;
+  color: var(--color-ink-faint);
 }
 
 .day-chip-dot {
@@ -403,6 +409,20 @@
 .day-stats-icon {
   display: inline-flex;
   align-items: center;
+}
+
+/* Night-sky + snow rows between the timeline and the stats grid. The rows
+   themselves are inset surface strips (see night-sky.css / snow-note.css);
+   this wrapper gives them shared rhythm and vanishes when both stay silent. */
+.day-conditions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: var(--space-3) 0;
+}
+
+.day-conditions:empty {
+  display: none;
 }
 
 .day-stats-grid {

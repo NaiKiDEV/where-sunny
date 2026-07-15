@@ -8,7 +8,10 @@ import {
 } from '../weather/openMeteo';
 
 const API_BASE = 'https://api.open-meteo.com/v1/forecast';
-const MARINE_BASE = 'https://marine-api.open-meteo.com/v1/marine';
+
+// Marine probing lives in core/marine/marine.ts (shared with the place-detail
+// sea conditions section); re-exported so trip consumers keep this import path.
+export { buildMarineUrl, fetchSeaTemps, parseSeaTemp } from '../marine/marine';
 
 /** Per-stop daily forecast plus sun-up/sun-down clock times (the trip "timings"). */
 export interface TripStopForecast {
@@ -62,40 +65,4 @@ export async function fetchTripForecasts(
   const res = await fetchImpl(buildTripForecastUrl(coords, days, timezone));
   if (!res.ok) throw new Error(`Trip forecast request failed: HTTP ${res.status}`);
   return parseTripForecasts(await res.json(), coords.length);
-}
-
-export function buildMarineUrl(coord: LatLon): string {
-  const params = new URLSearchParams({
-    latitude: coord.lat.toFixed(3),
-    longitude: coord.lon.toFixed(3),
-    current: 'sea_surface_temperature',
-  });
-  return `${MARINE_BASE}?${params}`;
-}
-
-export function parseSeaTemp(json: unknown): number | null {
-  const value = (json as { current?: { sea_surface_temperature?: number | null } }).current
-    ?.sea_surface_temperature;
-  return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
-
-/**
- * Sea-surface temperature per coordinate; null where there's no sea data (i.e.
- * inland). Probed per-stop and settled independently: the marine endpoint 400s
- * for inland points, and a single inland stop must not blank the coastal ones
- * (which a batched request would). Not worth surfacing as an error.
- */
-export async function fetchSeaTemps(
-  coords: LatLon[],
-  options: { fetchImpl?: typeof fetch } = {},
-): Promise<(number | null)[]> {
-  const { fetchImpl = fetch } = options;
-  if (coords.length === 0) return [];
-  const settled = await Promise.allSettled(
-    coords.map(async (coord) => {
-      const res = await fetchImpl(buildMarineUrl(coord));
-      return res.ok ? parseSeaTemp(await res.json()) : null;
-    }),
-  );
-  return settled.map((r) => (r.status === 'fulfilled' ? r.value : null));
 }

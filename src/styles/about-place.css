@@ -1,0 +1,62 @@
+/* ============ about place (destination guide blurb) ============ */
+/* Imported by AboutPlace.tsx - kept out of panel.css deliberately.
+   Everything derives from tokens.css variables so both themes stay intentional. */
+
+.about-place {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.about-place-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 650;
+  color: var(--color-ink);
+}
+
+.about-place-head svg {
+  color: var(--color-ink-soft);
+}
+
+.about-place-note {
+  font-size: var(--text-sm);
+  color: var(--color-ink-faint);
+}
+
+/* Fixed aspect ratio reserves the box before the image loads - no layout shift. */
+.about-place-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 7;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-line);
+  background: var(--color-sun-100);
+}
+
+.about-place-text {
+  margin: 0;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  color: var(--color-ink-soft);
+}
+
+.about-place-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  font-weight: 650;
+  color: var(--color-sun-700);
+  text-decoration: none;
+}
+
+.about-place-link:hover,
+.about-place-link:focus-visible {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}

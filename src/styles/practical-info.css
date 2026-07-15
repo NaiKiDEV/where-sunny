@@ -1,0 +1,40 @@
+/* ============ practical info (local time & currency) ============ */
+/* Imported by PracticalInfo.tsx - kept out of panel.css deliberately.
+   One quiet metadata row; everything derives from tokens.css variables so
+   both themes stay intentional. Card framing matches neighboring lower-section
+   blocks (sea-conditions, air-quality) for visual unity. */
+
+.practical-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-size: var(--text-sm);
+  color: var(--color-ink);
+}
+
+.practical-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.practical-item > svg {
+  flex: none;
+  color: var(--color-ink-soft);
+}
+
+.practical-label {
+  font-weight: 650;
+  color: var(--color-ink);
+}
+
+.practical-hint,
+.practical-sep {
+  color: var(--color-ink-faint);
+}

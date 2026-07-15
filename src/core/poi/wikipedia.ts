@@ -3,14 +3,20 @@
  * CORS-enabled - `origin=*` is required). A geosearch locates articles around
  * a coordinate; one batched enrich call adds a thumbnail and intro extract.
  * Fetch injects `fetchImpl` for tests; parse/merge is a pure helper.
+ * MediaWiki plumbing shared with core/guide lives in core/mediawiki.
  */
+import {
+  buildGeoSearchUrl as buildMediaWikiGeoSearchUrl,
+  mediaWikiApiUrl,
+  pageUrl,
+  parseGeoSearch,
+  type GeoSearchHit,
+} from '../mediawiki';
 import type { LatLon } from '../types';
 
 const DEFAULT_RADIUS_M = 4000;
 const DEFAULT_LIMIT = 10;
 const DEFAULT_LANG = 'en';
-/** Wikipedia caps geosearch radius at 10 km. */
-const MAX_RADIUS_M = 10_000;
 
 export interface PointOfInterest {
   pageId: number;
@@ -21,14 +27,6 @@ export interface PointOfInterest {
   url: string;
   thumbnail?: string;
   extract?: string;
-}
-
-interface GeoSearchItem {
-  pageid?: number;
-  title?: string;
-  lat?: number;
-  lon?: number;
-  dist?: number;
 }
 
 interface EnrichPage {
@@ -44,13 +42,13 @@ export interface FetchPoiOptions {
   fetchImpl?: typeof fetch;
 }
 
-function apiBase(lang: string): string {
-  return `https://${lang}.wikipedia.org/w/api.php`;
+function wikipediaHost(lang: string): string {
+  return `${lang}.wikipedia.org`;
 }
 
 /** A stable article URL that does not depend on the (mutable) title. */
 export function articleUrl(pageId: number, lang: string): string {
-  return `https://${lang}.wikipedia.org/?curid=${pageId}`;
+  return pageUrl(wikipediaHost(lang), pageId);
 }
 
 export function buildGeoSearchUrl(
@@ -59,30 +57,18 @@ export function buildGeoSearchUrl(
   limit: number,
   lang: string,
 ): string {
-  const params = new URLSearchParams({
-    action: 'query',
-    list: 'geosearch',
-    gscoord: `${coords.lat}|${coords.lon}`,
-    gsradius: String(Math.min(Math.round(radiusM), MAX_RADIUS_M)),
-    gslimit: String(limit),
-    format: 'json',
-    origin: '*',
-  });
-  return `${apiBase(lang)}?${params}`;
+  return buildMediaWikiGeoSearchUrl(wikipediaHost(lang), coords, radiusM, limit);
 }
 
 export function buildEnrichUrl(pageIds: number[], lang: string): string {
-  const params = new URLSearchParams({
+  return mediaWikiApiUrl(wikipediaHost(lang), {
     action: 'query',
     prop: 'pageimages|extracts',
     exintro: '1',
     explaintext: '1',
     pithumbsize: '160',
     pageids: pageIds.join('|'),
-    format: 'json',
-    origin: '*',
   });
-  return `${apiBase(lang)}?${params}`;
 }
 
 /**
@@ -90,13 +76,13 @@ export function buildEnrichUrl(pageIds: number[], lang: string): string {
  * and sort nearest-first. Pure - the network layer feeds it parsed JSON.
  */
 export function mergePoi(
-  items: GeoSearchItem[],
+  items: GeoSearchHit[],
   pages: Record<string, EnrichPage>,
   lang: string,
 ): PointOfInterest[] {
   return items
     .filter(
-      (it): it is GeoSearchItem & { pageid: number } =>
+      (it): it is GeoSearchHit & { pageid: number } =>
         typeof it.pageid === 'number' && typeof it.title === 'string',
     )
     .map((it) => {
@@ -128,8 +114,7 @@ export async function fetchNearbyPoi(
 
   const geoRes = await fetchImpl(buildGeoSearchUrl(coords, radiusM, limit, lang));
   if (!geoRes.ok) throw new Error(`Wikipedia GeoSearch failed: HTTP ${geoRes.status}`);
-  const geoJson = (await geoRes.json()) as { query?: { geosearch?: GeoSearchItem[] } };
-  const items = geoJson.query?.geosearch ?? [];
+  const items = parseGeoSearch(await geoRes.json());
   if (items.length === 0) return [];
 
   // Enrichment is best-effort: a failure here degrades to titles + distances

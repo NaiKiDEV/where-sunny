@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { ChevronLeft, MapPin, Navigation, Route, Star } from 'lucide-react';
 import type { ScoredDay, ScoredPlace } from '../../core/types';
 import { isNotableTerrain, terrainOf, TERRAIN_LABEL } from '../../core/candidates/feature';
+import { usePlaceForecast } from '../../hooks/usePlaceForecast';
 import { usePlaceInsight } from '../../hooks/usePlaceInsight';
 import {
   countryFlag,
   dayLabel,
+  dayOfMonth,
   describeWeather,
   directionsUrl,
   formatDistance,
@@ -14,6 +16,7 @@ import {
   formatTemp,
   formatTempBare,
   formatWind,
+  shortDayLabel,
   type TempUnit,
   uvBand,
 } from '../../lib/format';
@@ -22,11 +25,20 @@ import { scoreWord } from '../../lib/scoreLabel';
 import { weatherVisual } from '../../lib/weatherIcon';
 import { useAppStore } from '../../state/store';
 import { FlightLinks } from '../flights/FlightLinks';
+import { AboutPlace } from './AboutPlace';
+import { AirQualityNote } from './AirQualityNote';
+import { AnomalyNote } from './AnomalyNote';
 import { CalendarNote } from './CalendarNote';
+import { ClimateProfile } from './ClimateProfile';
 import { ConsensusBlock } from './ConsensusBlock';
 import { NearbyPoi } from './NearbyPoi';
+import { NightSkyNote } from './NightSkyNote';
+import { OutlookStrip } from './OutlookStrip';
+import { PracticalInfo } from './PracticalInfo';
 import { ScoreBreakdown } from './ScoreBreakdown';
+import { SeaConditions } from './SeaConditions';
 import { SharePlaceButton } from './SharePlaceButton';
+import { SnowNote } from './SnowNote';
 import { SunTimeline } from './SunTimeline';
 
 function DayChip({
@@ -42,15 +54,20 @@ function DayChip({
   isInWindow: boolean;
   onClick: () => void;
 }) {
+  const { Icon, color } = weatherVisual(day.weatherCode);
   return (
     <button
       type="button"
       className={`day-chip${isActive ? ' is-active' : ''}${isInWindow ? ' is-window' : ''}`}
       onClick={onClick}
     >
-      <span className="day-chip-label">{dayLabel(day.date)}</span>
+      <span className="day-chip-label">
+        {shortDayLabel(day.date)}{' '}
+        <span className="day-chip-date">{dayOfMonth(day.date)}</span>
+      </span>
+      <Icon size={18} strokeWidth={2} color={color} aria-hidden />
       <span className="day-chip-dot" style={{ background: scoreColor(day.score) }} />
-      <span className="day-chip-temp">{formatTempBare(day.tempMax, unit)}</span>
+      <span className="day-chip-temp">{formatTemp(day.tempMax, unit)}</span>
     </button>
   );
 }
@@ -74,6 +91,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const windowDates = new Set(scored.windowDays.map((d) => d.date));
 
   const insight = usePlaceInsight(scored.place);
+  const extended = usePlaceForecast(scored.place);
   const consensus = insight.consensusByDate.get(day.date);
   const hours = insight.hoursByDate.get(day.date) ?? [];
 
@@ -215,6 +233,11 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
         ))}
       </div>
 
+      <OutlookStrip
+        forecast={extended.forecast}
+        afterDate={scored.days[scored.days.length - 1]?.date}
+      />
+
       <div className="day-stats">
         <div className="day-stats-headline">
           <span className="day-stats-icon" aria-hidden>
@@ -235,6 +258,10 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
               : 'No hourly forecast for this day.'}
           </p>
         )}
+        <div className="day-conditions">
+          <NightSkyNote hoursByDate={insight.hoursByDate} date={day.date} coords={place} />
+          <SnowNote days={extended.forecast?.days ?? []} place={place} activeDate={day.date} />
+        </div>
         <dl className="day-stats-grid">
           <div>
             <dt>Sunshine</dt>
@@ -277,7 +304,17 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
         </dl>
       </div>
 
+      <SeaConditions place={place} activeDate={day.date} unit={unit} />
+
       <ScoreBreakdown day={day} />
+
+      <AirQualityNote
+        coords={place}
+        activeDate={day.date}
+        windowDates={scored.windowDays.map((d) => d.date)}
+      />
+
+      <AnomalyNote coords={place} date={day.date} forecastTmax={day.tempMax} />
 
       {!isHome && (
         <CalendarNote
@@ -289,7 +326,13 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
 
       <ConsensusBlock consensus={consensus} isLoading={insight.isLoadingConsensus} />
 
+      <AboutPlace place={place} />
+
       {place.kind !== 'airport' && <NearbyPoi coords={place} />}
+
+      <ClimateProfile coords={place} />
+
+      <PracticalInfo place={place} timezone={extended.forecast?.timezone} />
 
       {!isHome && <FlightLinks place={place} date={day.date} />}
 
