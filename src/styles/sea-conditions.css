@@ -103,6 +103,20 @@
   transform: rotate(180deg);
 }
 
+/* Tide times: one quiet footnote row under the summary card; times arrive as
+   destination-local strings straight from the marine API. */
+.sea-tides {
+  margin: 0;
+  padding: 2px var(--space-3);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-ink-soft);
+}
+
+.sea-tides-range {
+  color: var(--color-ink-faint);
+}
+
 .sea-days {
   display: flex;
   flex-direction: column;

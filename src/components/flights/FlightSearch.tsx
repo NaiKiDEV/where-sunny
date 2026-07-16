@@ -5,6 +5,8 @@ import {
   buildFlightLinks,
   type FlightLink,
 } from "../../core/flights/flightLinks";
+import { buildRome2RioLink } from '../../core/flights/groundLinks';
+import { GroundTransportLink } from './FlightLinks';
 import { useAirports } from "../../hooks/useAirports";
 import { formatDistance } from "../../lib/format";
 import { useAppStore } from "../../state/store";
@@ -35,6 +37,7 @@ export function FlightSearch() {
   const flightOriginAirport = useAppStore((s) => s.flightOriginAirport);
   const setFlightOriginAirport = useAppStore((s) => s.setFlightOriginAirport);
   const currency = useAppStore((s) => s.currency);
+  const system = useAppStore((s) => s.unitSystem);
   const { airports, isLoading } = useAirports();
 
   const [picking, setPicking] = useState<PickerTarget | null>(null);
@@ -57,7 +60,7 @@ export function FlightSearch() {
       originEnd = {
         code: nearest.airport.iata,
         label: nearest.airport.name,
-        note: `${formatDistance(nearest.distanceKm)} from ${origin.label}`,
+        note: `${formatDistance(nearest.distanceKm, system)} from ${origin.label}`,
       };
     }
   }
@@ -91,6 +94,18 @@ export function FlightSearch() {
     } catch {
       // Guards above make this unreachable; an empty row beats a crash.
       links = [];
+    }
+  }
+
+  // The user explicitly opened a route planner, so the ground option shows at
+  // any distance once both ends are chosen. Rome2Rio routes by display name.
+  let groundUrl: string | null = null;
+  if (originEnd && destEnd && !sameAirport) {
+    try {
+      groundUrl = buildRome2RioLink(originEnd.label, destEnd.label);
+    } catch {
+      // Only reachable when a label is somehow blank; no link beats a crash.
+      groundUrl = null;
     }
   }
 
@@ -162,8 +177,11 @@ export function FlightSearch() {
           The return date is before the departure.
         </p>
       )}
-      {links.length > 0 ? (
-        <FlightProviderLinks links={links} />
+      {links.length > 0 || groundUrl !== null ? (
+        <div className="flight-provider-links">
+          <FlightProviderLinks links={links} />
+          {groundUrl !== null && <GroundTransportLink url={groundUrl} />}
+        </div>
       ) : (
         !isLoading &&
         !sameAirport &&

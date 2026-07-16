@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  BedDouble,
   CalendarDays,
   ChevronDown,
   ChevronLeft,
@@ -14,21 +15,30 @@ import {
   X,
 } from 'lucide-react';
 import { haversineKm } from '../../core/geo';
-import { windowDates } from '../../core/scoring/window';
+import { buildBookingUrl } from '../../core/lodging/stayLinks';
+import type { DriveLeg } from '../../core/routing/osrm';
+import { addIsoDays, windowDates } from '../../core/scoring/window';
 import { encodeTrip } from '../../core/trip/share';
 import {
   orderedStops,
   stopDay,
   tripDayCount,
-  tripTotalKm,
   type Trip,
   type TripStop,
 } from '../../core/trip/trip';
 import type { Place } from '../../core/types';
 import { useBannedFilter } from '../../hooks/useBannedFilter';
 import { useCountryCalendar } from '../../hooks/useCountryCalendar';
+import { useDriveRoute } from '../../hooks/useDriveRoute';
 import { useTripPlan, type StopInsight } from '../../hooks/useTripPlan';
-import { countryFlag, dayLabel, formatDistance, formatTemp } from '../../lib/format';
+import {
+  countryDisplayName,
+  countryFlag,
+  dayLabel,
+  formatDistance,
+  formatDriveTime,
+  formatTemp,
+} from '../../lib/format';
 import { scoreColor, scoreTextColor } from '../../lib/scoreColor';
 import { weatherVisual } from '../../lib/weatherIcon';
 import { useAppStore } from '../../state/store';
@@ -93,19 +103,33 @@ function StopHolidayFlag({ place, date }: { place: Place; date: string }) {
 function TripStopRow({
   stop,
   legKm,
+  driveLeg,
   insight,
+  stayUrl,
 }: {
   stop: TripStop;
   legKm: number | null;
+  /** Routed leg from the previous stop; null keeps the straight-line display. */
+  driveLeg?: DriveLeg | null;
   insight?: StopInsight;
+  /** Pre-built Booking.com link for this stop's nights; absent = no link. */
+  stayUrl?: string;
 }) {
   const setPreviewPlace = useAppStore((s) => s.setPreviewPlace);
   const removeFromTrip = useAppStore((s) => s.removeFromTrip);
   const moveTripStopDay = useAppStore((s) => s.moveTripStopDay);
+  const system = useAppStore((s) => s.unitSystem);
 
   return (
     <li className="trip-stop">
-      {legKm !== null && <span className="trip-leg">↳ {formatDistance(legKm)}</span>}
+      {legKm !== null && (
+        <span className="trip-leg">
+          ↳{' '}
+          {driveLeg
+            ? `${formatDriveTime(driveLeg.minutes)} · ${formatDistance(driveLeg.km, system)}`
+            : formatDistance(legKm, system)}
+        </span>
+      )}
       <div className="trip-stop-row">
         <button type="button" className="trip-stop-main" onClick={() => setPreviewPlace(stop.place)}>
           <span className="place-name">
@@ -116,6 +140,17 @@ function TripStopRow({
           {insight && <StopHolidayFlag place={stop.place} date={insight.plan.assignedDate} />}
         </button>
         <span className="trip-stop-actions">
+          {stayUrl && (
+            <a
+              className="trip-icon-btn"
+              href={stayUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`Stay in ${stop.place.name}`}
+            >
+              <BedDouble size={16} aria-hidden />
+            </a>
+          )}
           <button
             type="button"
             className="trip-icon-btn"
@@ -178,6 +213,8 @@ function ActiveTrip({ trip }: { trip: Trip }) {
   const renameActiveTrip = useAppStore((s) => s.renameActiveTrip);
   const optimizeTripOrder = useAppStore((s) => s.optimizeTripOrder);
   const deleteTrip = useAppStore((s) => s.deleteTrip);
+  const currency = useAppStore((s) => s.currency);
+  const system = useAppStore((s) => s.unitSystem);
   const { byKey, isLoading } = useTripPlan(trip);
   const { isBanned } = useBannedFilter();
 
@@ -192,6 +229,55 @@ function ActiveTrip({ trip }: { trip: Trip }) {
   ordered.forEach((stop, i) => {
     const prev = i === 0 ? trip.origin : ordered[i - 1].place;
     legByKey.set(stop.placeKey, prev ? haversineKm(prev, stop.place) : null);
+  });
+
+  // Header total over the same visible (ban-filtered, origin-inclusive) chain
+  // as the drive time below - identical to tripTotalKm when nothing is banned.
+  const visibleTotalKm = ordered.reduce(
+    (sum, stop) => sum + (legByKey.get(stop.placeKey) ?? 0),
+    0,
+  );
+
+  // One routed request for the origin (when set) plus the whole stop chain,
+  // so the drive-time total measures the same journey as tripTotalKm. Null
+  // while loading / skipped / unroutable - legs keep the straight-line km.
+  const stopCoords = ordered.map((s) => ({ lat: s.place.lat, lon: s.place.lon }));
+  const driveChain = trip.origin
+    ? [{ lat: trip.origin.lat, lon: trip.origin.lon }, ...stopCoords]
+    : stopCoords;
+  const { route: driveRoute } = useDriveRoute(driveChain.length >= 2 ? driveChain : null);
+  // With an origin, legs[0] is origin→first stop, so each stop's incoming leg
+  // is legs[i]; without one, the first stop has no leg and legs shift by one.
+  const driveLegByKey = new Map<string, DriveLeg>();
+  driveRoute?.legs.forEach((leg, i) => {
+    const stop = trip.origin ? ordered[i] : ordered[i + 1];
+    if (stop) driveLegByKey.set(stop.placeKey, leg);
+  });
+
+  // A stop's nights run from its scheduled day to the next stop's (last stop:
+  // one night). A zero-night gap (next stop shares the day) makes the builder
+  // throw, which quietly means "no stay link" for that stop.
+  const stayUrlByKey = new Map<string, string>();
+  ordered.forEach((stop, i) => {
+    const insight = byKey.get(stop.placeKey);
+    if (!insight) return;
+    const checkIn = insight.plan.assignedDate;
+    const next = ordered[i + 1] ? byKey.get(ordered[i + 1].placeKey) : undefined;
+    const checkOut = next?.plan.assignedDate ?? addIsoDays(checkIn, 1);
+    try {
+      stayUrlByKey.set(
+        stop.placeKey,
+        buildBookingUrl({
+          placeName: stop.place.name,
+          countryName: countryDisplayName(stop.place),
+          checkIn,
+          checkOut,
+          currency,
+        }),
+      );
+    } catch {
+      // zero-night gap or malformed dates - skip the link for this stop
+    }
   });
 
   const canOptimize = trip.origin !== undefined && trip.stops.length >= 3;
@@ -221,7 +307,8 @@ function ActiveTrip({ trip }: { trip: Trip }) {
                 {trip.stops.length} {trip.stops.length === 1 ? 'stop' : 'stops'}
               </span>
               <span>
-                {formatDistance(tripTotalKm(trip))}
+                {formatDistance(visibleTotalKm, system)}
+                {driveRoute ? ` · ${formatDriveTime(driveRoute.totalMinutes)} by car` : ''}
                 {isLoading ? ' · planning…' : ''}
               </span>
             </>
@@ -256,7 +343,9 @@ function ActiveTrip({ trip }: { trip: Trip }) {
                     key={stop.placeKey}
                     stop={stop}
                     legKm={legByKey.get(stop.placeKey) ?? null}
+                    driveLeg={driveLegByKey.get(stop.placeKey) ?? null}
                     insight={byKey.get(stop.placeKey)}
+                    stayUrl={stayUrlByKey.get(stop.placeKey)}
                   />
                 ))}
               </ol>

@@ -2,7 +2,14 @@ import { HelpCircle } from 'lucide-react';
 import { explainScore, type ScorePart } from '../../core/scoring/explain';
 import { comfortTemp } from '../../core/scoring/score';
 import type { ScoredDay } from '../../core/types';
-import { formatSunHours, formatTemp, formatTempBare, formatWind, type TempUnit } from '../../lib/format';
+import {
+  formatSunHours,
+  formatTemp,
+  formatTempBare,
+  formatWind,
+  type TempUnit,
+  type UnitSystem,
+} from '../../lib/format';
 import { scoreWord } from '../../lib/scoreLabel';
 import { useAppStore } from '../../state/store';
 import { SCORE_PART_META } from './scoreParts';
@@ -13,6 +20,7 @@ function partDetail(
   idealMin: number,
   idealMax: number,
   unit: TempUnit,
+  system: UnitSystem,
 ): string {
   switch (id) {
     case 'sun':
@@ -31,7 +39,7 @@ function partDetail(
     case 'rain':
       return `${Math.round(day.precipProbMax)}% chance of rain`;
     case 'wind':
-      return day.windMax === undefined ? '' : `${formatWind(day.windMax)} peak wind`;
+      return day.windMax === undefined ? '' : `${formatWind(day.windMax, system)} peak wind`;
   }
 }
 
@@ -42,6 +50,7 @@ function partDetail(
 export function ScoreBreakdown({ day }: { day: ScoredDay }) {
   const comfort = useAppStore((s) => s.comfort);
   const unit = useAppStore((s) => s.unit);
+  const system = useAppStore((s) => s.unitSystem);
   const openScoreInfo = useAppStore((s) => s.openScoreInfo);
   const breakdown = explainScore(day, comfort);
 
@@ -73,7 +82,7 @@ export function ScoreBreakdown({ day }: { day: ScoredDay }) {
                     style={{ width: `${Math.round(fill * 100)}%` }}
                   />
                 </span>
-                <span className="breakdown-detail">{partDetail(part.id, day, comfort.idealMin, comfort.idealMax, unit)}</span>
+                <span className="breakdown-detail">{partDetail(part.id, day, comfort.idealMin, comfort.idealMax, unit, system)}</span>
               </span>
             </div>
           );

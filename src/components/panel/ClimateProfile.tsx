@@ -9,6 +9,7 @@ import {
   type ClimateNormals,
   type MonthlyNormal,
 } from '../../core/climate/normals';
+import { seasonNote, type SeasonNote } from '../../core/climate/season';
 import type { LatLon } from '../../core/types';
 import { useClimateNormals } from '../../hooks/useClimateNormals';
 import { formatTempBare, type TempUnit } from '../../lib/format';
@@ -77,6 +78,7 @@ export function ClimateProfile({ coords }: ClimateProfileProps) {
   const { normals, isLoading, isError } = useClimateNormals(coords, expanded);
   const unit = useAppStore((s) => s.unit);
   const currentMonth = new Date().getMonth() + 1;
+  const season = normals ? seasonNote(normals.monthly, coords.lat) : null;
 
   return (
     <section className="climate" aria-label="Best time to visit">
@@ -115,10 +117,27 @@ export function ClimateProfile({ coords }: ClimateProfileProps) {
               </span>
             )}
           </p>
+          {season && <p className="climate-crowds">{seasonSentence(season)}</p>}
         </div>
       )}
     </section>
   );
+}
+
+/**
+ * One sentence of crowd intelligence. School-peak: the busy school window is
+ * also the weather peak, so point at the shoulder months. Pleasant-peak: the
+ * best weather misses the school holidays, so contrast pleasant vs busy.
+ */
+function seasonSentence(note: SeasonNote): string {
+  const peak = formatMonthRanges(note.peakMonths);
+  if (note.kind === 'school-peak') {
+    const shoulders = formatMonthRanges(note.shoulderMonths);
+    const verb = note.shoulderMonths.length > 1 ? 'offer' : 'offers';
+    return `${peak} is peak season - warmest and busiest. ${shoulders} ${verb} similar weather with fewer crowds.`;
+  }
+  const school = formatMonthRanges(note.schoolMonths);
+  return `${school} school holidays are the busiest - for better weather and fewer crowds, aim for ${peak}.`;
 }
 
 function chartLabel(normals: ClimateNormals, unit: TempUnit): string {

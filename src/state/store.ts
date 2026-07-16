@@ -5,7 +5,7 @@ import { BANNED_COUNTRY_CODES, isBannedPlace, isEffectivelyBanned } from '../cor
 import { DEFAULT_CURRENCY, inferCurrency } from '../core/currency';
 import type { ComfortPrefs } from '../core/scoring/score';
 import { DEFAULT_COMFORT } from '../core/scoring/score';
-import type { TempUnit } from '../lib/format';
+import type { TempUnit, UnitSystem } from '../lib/format';
 import type { Trip, TripStop } from '../core/trip/trip';
 import { addStop, moveStopDay, orderByProximity, removeStop, renameTrip } from '../core/trip/trip';
 import type { Origin, Place, TierId, WindowId } from '../core/types';
@@ -55,8 +55,12 @@ interface AppState {
   comfort: ComfortPrefs;
   /** Temperature display unit; values are stored in Celsius and converted on render. */
   unit: TempUnit;
+  /** Distance/speed/height display system; values are stored metric and converted on render. */
+  unitSystem: UnitSystem;
   /** ISO 4217 code for flight price links; seeded from the device locale on first run. */
   currency: string;
+  /** ISO 3166-1 alpha-2 passport country for the visa quick-check; null = unset (feature hidden). */
+  passportCountry: string | null;
   overlay: OverlayMode;
   overlayStyle: OverlayStyle;
   pinned: Place[];
@@ -82,7 +86,9 @@ interface AppState {
   setTimeWindow: (timeWindow: WindowId) => void;
   setComfort: (comfort: ComfortPrefs) => void;
   setUnit: (unit: TempUnit) => void;
+  setUnitSystem: (unitSystem: UnitSystem) => void;
   setCurrency: (currency: string) => void;
+  setPassportCountry: (code: string | null) => void;
   setOverlay: (overlay: OverlayMode) => void;
   setOverlayStyle: (style: OverlayStyle) => void;
   addPin: (place: Place) => void;
@@ -131,7 +137,9 @@ export const useAppStore = create<AppState>()(
       timeWindow: 'today',
       comfort: DEFAULT_COMFORT,
       unit: 'c',
+      unitSystem: 'metric',
       currency: inferCurrency() ?? DEFAULT_CURRENCY,
+      passportCountry: null,
       overlay: 'off',
       overlayStyle: 'field',
       pinned: [],
@@ -161,7 +169,9 @@ export const useAppStore = create<AppState>()(
       setTimeWindow: (timeWindow) => set({ timeWindow, selectedPlaceKey: null }),
       setComfort: (comfort) => set({ comfort }),
       setUnit: (unit) => set({ unit }),
+      setUnitSystem: (unitSystem) => set({ unitSystem }),
       setCurrency: (currency) => set({ currency }),
+      setPassportCountry: (passportCountry) => set({ passportCountry }),
       setOverlay: (overlay) => set({ overlay }),
       setOverlayStyle: (overlayStyle) => set({ overlayStyle }),
       addPin: (place) =>
@@ -298,7 +308,9 @@ export const useAppStore = create<AppState>()(
         timeWindow: state.timeWindow,
         comfort: state.comfort,
         unit: state.unit,
+        unitSystem: state.unitSystem,
         currency: state.currency,
+        passportCountry: state.passportCountry,
         overlay: state.overlay,
         overlayStyle: state.overlayStyle,
         pinned: state.pinned,

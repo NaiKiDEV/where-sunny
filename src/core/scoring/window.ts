@@ -23,6 +23,12 @@ function addDays(date: Date, days: number): Date {
   return next;
 }
 
+/** ISO date shifted by whole days ("2026-07-31" + 1 → "2026-08-01"). */
+export function addIsoDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split('-').map(Number);
+  return toLocalIsoDate(new Date(y, m - 1, d + days));
+}
+
 /**
  * Local calendar dates (YYYY-MM-DD) covered by a time window. All dates fall
  * within the 7-day forecast horizon, so one forecast fetch serves every

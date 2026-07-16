@@ -1,10 +1,33 @@
+import { codeOf } from '../core/bannedCountries';
 import { toLocalIsoDate } from '../core/scoring/window';
 
 const SECONDS_PER_HOUR = 3600;
+const MINUTES_PER_HOUR = 60;
 
-export function formatDistance(km: number): string {
-  if (km < 1) return '< 1 km';
-  return km < 10 ? `${km.toFixed(1)} km` : `${Math.round(km)} km`;
+/** Which system distances, speeds, and heights are shown in. Stored metric; converted on display. */
+export type UnitSystem = 'metric' | 'imperial';
+
+const KM_PER_MILE = 1.609344;
+const FEET_PER_METER = 3.28084;
+const CM_PER_INCH = 2.54;
+
+export function formatDistance(km: number, system: UnitSystem): string {
+  const isImperial = system === 'imperial';
+  const value = isImperial ? km / KM_PER_MILE : km;
+  const suffix = isImperial ? 'mi' : 'km';
+  if (value < 1) return `< 1 ${suffix}`;
+  return value < 10
+    ? `${value.toFixed(1)} ${suffix}`
+    : `${Math.round(value).toLocaleString('en-US')} ${suffix}`;
+}
+
+/** Drive-time duration: "45 min" under an hour, then "2 h" / "3 h 05 min". */
+export function formatDriveTime(minutes: number): string {
+  const total = Math.max(0, Math.round(minutes));
+  if (total < MINUTES_PER_HOUR) return `${total} min`;
+  const h = Math.floor(total / MINUTES_PER_HOUR);
+  const m = total % MINUTES_PER_HOUR;
+  return m === 0 ? `${h} h` : `${h} h ${String(m).padStart(2, '0')} min`;
 }
 
 export function formatSunHours(seconds: number): string {
@@ -29,12 +52,29 @@ export function formatTemp(celsius: number, unit: TempUnit): string {
   return `${formatTempBare(celsius, unit)}${unit === 'f' ? 'F' : 'C'}`;
 }
 
-export function formatElevation(meters: number): string {
-  return `${Math.round(meters).toLocaleString()} m`;
+export function formatElevation(meters: number, system: UnitSystem): string {
+  const isImperial = system === 'imperial';
+  const value = isImperial ? meters * FEET_PER_METER : meters;
+  return `${Math.round(value).toLocaleString('en-US')} ${isImperial ? 'ft' : 'm'}`;
 }
 
-export function formatWind(kmh: number): string {
-  return `${Math.round(kmh)} km/h`;
+export function formatWind(kmh: number, system: UnitSystem): string {
+  return system === 'imperial'
+    ? `${Math.round(kmh / KM_PER_MILE)} mph`
+    : `${Math.round(kmh)} km/h`;
+}
+
+/** Sea heights (waves, tidal range): one decimal up to 10, whole numbers above. */
+export function formatSeaHeight(meters: number, system: UnitSystem): string {
+  const isImperial = system === 'imperial';
+  const value = isImperial ? meters * FEET_PER_METER : meters;
+  const suffix = isImperial ? 'ft' : 'm';
+  return value < 10 ? `${value.toFixed(1)} ${suffix}` : `${Math.round(value)} ${suffix}`;
+}
+
+/** Snow depths: whole centimetres or inches. */
+export function formatSnowDepth(cm: number, system: UnitSystem): string {
+  return system === 'imperial' ? `${Math.round(cm / CM_PER_INCH)} in` : `${Math.round(cm)} cm`;
 }
 
 /** "2026-07-12T05:12" -> "05:12"; "" when the input is too short to hold a time. */
@@ -95,6 +135,32 @@ export function countryFlag(countryCode: string): string {
   return [...countryCode.toUpperCase()]
     .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
     .join('');
+}
+
+// Lazy singleton, mirroring core/currency's Intl.DisplayNames usage.
+let regionNames: Intl.DisplayNames | null = null;
+
+/**
+ * English country display name for a place ("PT" → "Portugal"). Bundled cities
+ * carry the alpha-2 code (in `country`), geocoded places a full name - resolve
+ * codes via Intl and pass full names through. Undefined when unresolvable.
+ */
+export function countryDisplayName(place: {
+  country?: string;
+  countryCode?: string;
+}): string | undefined {
+  const code = codeOf(place);
+  if (/^[A-Z]{2}$/.test(code)) {
+    try {
+      regionNames ??= new Intl.DisplayNames('en', { type: 'region' });
+      const name = regionNames.of(code);
+      if (name && name !== code) return name;
+    } catch {
+      // Region data unavailable - fall through to the raw name check.
+    }
+  }
+  const raw = place.country?.trim();
+  return raw && raw.length > 2 ? raw : undefined;
 }
 
 const WEATHER_LABELS: [Set<number>, string][] = [

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { CloudMoon, MoonStar } from 'lucide-react';
+import { meteorNote } from '../../core/night/meteors';
 import { moonPhaseLabel, nightSkyOutlook } from '../../core/night/nightSky';
 import type { LatLon } from '../../core/types';
 import type { HourPoint } from '../../core/weather/hourly';
@@ -23,7 +24,8 @@ function formatHour(hour: number): string {
  * waning crescent"); cloudy nights still state the condition and the moon, so
  * the row is always there to answer "and after sunset?". Hides only when
  * there is no night to describe (hourly not loaded, or polar day). Zero
- * network calls.
+ * network calls. When a major meteor shower is active and the night is at
+ * least fairly clear, one extra sentence flags it (see core/night/meteors).
  */
 export function NightSkyNote({ hoursByDate, date, coords }: NightSkyNoteProps) {
   const { lat, lon } = coords;
@@ -35,6 +37,9 @@ export function NightSkyNote({ hoursByDate, date, coords }: NightSkyNoteProps) {
   if (outlook.darkHours === 0) return null;
 
   const moon = moonPhaseLabel(outlook.moonPhase);
+  // Null unless a shower is active, visible from this latitude, and the
+  // night's verdict is at least decent - so cloudy nights change nothing.
+  const meteor = meteorNote(date, coords.lat, outlook);
   const isClear = outlook.clearWindow !== undefined;
   const Icon = isClear ? MoonStar : CloudMoon;
 
@@ -46,6 +51,7 @@ export function NightSkyNote({ hoursByDate, date, coords }: NightSkyNoteProps) {
           <>
             {outlook.band === 'great' ? 'Clear night sky' : 'Fairly clear night'}{' '}
             {formatHour(outlook.clearWindow.from)}–{formatHour(outlook.clearWindow.to)} · {moon}
+            {meteor !== null && <> · {meteor}</>}
           </>
         ) : (
           <>

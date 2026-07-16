@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Plane } from 'lucide-react';
-import { nearestFlightAirport } from '../../core/airports/nearest';
+import { MAX_FLIGHT_AIRPORT_KM, nearestFlightAirport } from '../../core/airports/nearest';
 import type { Airport } from '../../core/airports/types';
 import { buildFlightLinks, type FlightLink } from '../../core/flights/flightLinks';
+import { GROUND_LINK_MAX_KM, buildRome2RioLink } from '../../core/flights/groundLinks';
+import { haversineKm } from '../../core/geo';
 import type { Place } from '../../core/types';
 import { useAirports } from '../../hooks/useAirports';
 import { dayLabel, formatDistance } from '../../lib/format';
@@ -23,6 +25,7 @@ export function FlightLinks({ place, date }: { place: Place; date: string }) {
   const flightOriginAirport = useAppStore((s) => s.flightOriginAirport);
   const setFlightOriginAirport = useAppStore((s) => s.setFlightOriginAirport);
   const currency = useAppStore((s) => s.currency);
+  const system = useAppStore((s) => s.unitSystem);
   const { airports } = useAirports();
 
   const [picking, setPicking] = useState<PickerTarget | null>(null);
@@ -41,7 +44,7 @@ export function FlightLinks({ place, date }: { place: Place; date: string }) {
       ? {
           code: nearest.airport.iata,
           label: nearest.airport.name,
-          note: `${formatDistance(nearest.distanceKm)} from ${origin.label}`,
+          note: `${formatDistance(nearest.distanceKm, system)} from ${origin.label}`,
         }
       : { label: origin.label };
   }
@@ -57,7 +60,7 @@ export function FlightLinks({ place, date }: { place: Place; date: string }) {
       ? {
           code: nearest.airport.iata,
           label: nearest.airport.name,
-          note: `${formatDistance(nearest.distanceKm)} from ${place.name}`,
+          note: `${formatDistance(nearest.distanceKm, system)} from ${place.name}`,
         }
       : { label: place.name };
   }
@@ -75,6 +78,18 @@ export function FlightLinks({ place, date }: { place: Place; date: string }) {
     } catch {
       // Only reachable when a label is somehow blank; an empty row beats a crash.
       links = [];
+    }
+  }
+
+  // Ground transport only competes with flying on short hops. Rome2Rio wants
+  // place names, not IATA codes, so the link routes city-to-city.
+  let groundUrl: string | null = null;
+  if (haversineKm(origin, place) < GROUND_LINK_MAX_KM) {
+    try {
+      groundUrl = buildRome2RioLink(origin.label, place.name);
+    } catch {
+      // Only reachable when a name is somehow blank; no link beats a crash.
+      groundUrl = null;
     }
   }
 
@@ -114,17 +129,48 @@ export function FlightLinks({ place, date }: { place: Place; date: string }) {
         />
       )}
       {sameAirport ? (
-        <p className="flight-links-note">
-          This is your departure airport - pick a different arrival airport to compare fares.
-        </p>
+        <>
+          {groundUrl !== null && (
+            <div className="flight-provider-links">
+              <GroundTransportLink url={groundUrl} />
+            </div>
+          )}
+          <p className="flight-links-note">
+            This is your departure airport - pick a different arrival airport to compare fares.
+          </p>
+        </>
       ) : (
-        <FlightProviderLinks links={links} />
+        (links.length > 0 || groundUrl !== null) && (
+          <div className="flight-provider-links">
+            <FlightProviderLinks links={links} />
+            {groundUrl !== null && <GroundTransportLink url={groundUrl} />}
+          </div>
+        )
       )}
       {!sameAirport && (!originEnd.code || !destEnd.code) && (
         <p className="flight-links-note">
-          No airport with scheduled flights within 300 km - Google searches by place name instead.
+          No airport with scheduled flights within {formatDistance(MAX_FLIGHT_AIRPORT_KM, system)} -
+          Google searches by place name instead.
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Quieter Rome2Rio link for trains, buses, and ferries - a secondary option
+ * beside the provider links, not a fourth equal provider. Shared with
+ * FlightSearch so the label and anatomy stay in one place.
+ */
+export function GroundTransportLink({ url }: { url: string }) {
+  return (
+    <a
+      className="airport-link airport-link--ground"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      Trains, buses & ferries ↗
+    </a>
   );
 }

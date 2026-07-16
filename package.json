@@ -11,7 +11,7 @@
     "test": "vitest run",
     "setup:countries": "node scripts/build-countries.mjs",
     "setup:airports": "node scripts/build-airports.mjs",
-    "setup:data": "node scripts/build-cities.mjs && node scripts/build-icons.mjs && node scripts/build-countries.mjs && node scripts/build-airports.mjs"
+    "setup:data": "node scripts/build-cities.mjs && node scripts/build-icons.mjs && node scripts/build-countries.mjs && node scripts/build-airports.mjs && node scripts/build-country-facts.mjs && node scripts/build-visa-matrix.mjs"
   },
   "dependencies": {
     "@tanstack/query-async-storage-persister": "^5.101.2",

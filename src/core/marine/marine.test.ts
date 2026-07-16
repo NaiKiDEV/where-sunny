@@ -5,6 +5,7 @@ import {
   fetchSeaTemps,
   isLikelyCoastal,
   parseMarineDaily,
+  parseSeaLevelHours,
   swimBand,
   waveComfort,
 } from './marine';
@@ -26,6 +27,18 @@ const inlandDaily = {
     time: ['2026-07-15', '2026-07-16'],
     sea_surface_temperature_max: [null, null],
     wave_height_max: [null, null],
+  },
+};
+
+const coastalWithTides = {
+  daily: {
+    time: ['2026-07-16'],
+    sea_surface_temperature_max: [18.2],
+    wave_height_max: [1.1],
+  },
+  hourly: {
+    time: ['2026-07-16T00:00', '2026-07-16T01:00', '2026-07-16T02:00'],
+    sea_level_height_msl: [4.1, null, -3.9],
   },
 };
 
@@ -67,6 +80,13 @@ describe('buildMarineDailyUrl', () => {
     expect(url).toContain('forecast_days=7');
     expect(url).toContain('timezone=auto');
   });
+
+  it('adds the hourly sea-level variable only when asked', () => {
+    expect(buildMarineDailyUrl({ lat: 48.65, lon: -2.026 })).not.toContain('hourly');
+    expect(buildMarineDailyUrl({ lat: 48.65, lon: -2.026 }, 7, 'auto', true)).toContain(
+      'hourly=sea_level_height_msl',
+    );
+  });
 });
 
 describe('parseMarineDaily', () => {
@@ -86,6 +106,21 @@ describe('parseMarineDaily', () => {
 
   it('returns an empty list for a shapeless payload', () => {
     expect(parseMarineDaily({})).toEqual([]);
+  });
+});
+
+describe('parseSeaLevelHours', () => {
+  it('maps hourly times to heights and preserves nulls per hour', () => {
+    expect(parseSeaLevelHours(coastalWithTides)).toEqual([
+      { time: '2026-07-16T00:00', height: 4.1 },
+      { time: '2026-07-16T01:00', height: null },
+      { time: '2026-07-16T02:00', height: -3.9 },
+    ]);
+  });
+
+  it('returns an empty list when the hourly block is absent', () => {
+    expect(parseSeaLevelHours(coastalDaily)).toEqual([]);
+    expect(parseSeaLevelHours({})).toEqual([]);
   });
 });
 
@@ -118,6 +153,39 @@ describe('fetchMarineDaily', () => {
     );
     expect(days).toBeNull();
   });
+
+  it('leaves the hourly variable and seaLevels off by default', async () => {
+    const requested: string[] = [];
+    const fetchImpl = vi.fn((url: string) => {
+      requested.push(url);
+      return Promise.resolve(jsonResponse(coastalDaily));
+    });
+    const days = await fetchMarineDaily(
+      { lat: 36.7, lon: -4.4 },
+      { fetchImpl: fetchImpl as typeof fetch },
+    );
+    expect(requested[0]).not.toContain('hourly');
+    expect(days?.seaLevels).toBeUndefined();
+  });
+
+  it('carries the hourly sea-level series when includeSeaLevel is on', async () => {
+    const requested: string[] = [];
+    const fetchImpl = vi.fn((url: string) => {
+      requested.push(url);
+      return Promise.resolve(jsonResponse(coastalWithTides));
+    });
+    const days = await fetchMarineDaily(
+      { lat: 48.65, lon: -2.026 },
+      { fetchImpl: fetchImpl as typeof fetch, includeSeaLevel: true },
+    );
+    expect(requested[0]).toContain('hourly=sea_level_height_msl');
+    expect(days).toHaveLength(1);
+    expect(days?.seaLevels).toEqual([
+      { time: '2026-07-16T00:00', height: 4.1 },
+      { time: '2026-07-16T01:00', height: null },
+      { time: '2026-07-16T02:00', height: -3.9 },
+    ]);
+  });
 });
 
 describe('fetchSeaTemps', () => {
@@ -136,5 +204,16 @@ describe('fetchSeaTemps', () => {
     );
     expect(temps[0]).toBeNull();
     expect(temps[1]).toBeCloseTo(21.4, 5);
+  });
+
+  it('never requests hourly sea-level data (per-stop probes stay lean)', async () => {
+    const requested: string[] = [];
+    const fetchImpl = vi.fn((url: string) => {
+      requested.push(url);
+      return Promise.resolve(jsonResponse({ current: { sea_surface_temperature: 21.4 } }));
+    });
+    await fetchSeaTemps([{ lat: 43.7, lon: 7.26 }], { fetchImpl: fetchImpl as typeof fetch });
+    expect(requested[0]).toContain('current=sea_surface_temperature');
+    expect(requested[0]).not.toContain('hourly');
   });
 });

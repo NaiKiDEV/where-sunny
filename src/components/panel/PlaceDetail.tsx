@@ -2,15 +2,20 @@ import { useState } from 'react';
 import { ChevronLeft, MapPin, Navigation, Route, Star } from 'lucide-react';
 import type { ScoredDay, ScoredPlace } from '../../core/types';
 import { isNotableTerrain, terrainOf, TERRAIN_LABEL } from '../../core/candidates/feature';
+import { bestForecastWindow } from '../../core/outlook/bestWindow';
+import { addIsoDays } from '../../core/scoring/window';
+import { useDriveRoute } from '../../hooks/useDriveRoute';
 import { usePlaceForecast } from '../../hooks/usePlaceForecast';
 import { usePlaceInsight } from '../../hooks/usePlaceInsight';
 import {
+  countryDisplayName,
   countryFlag,
   dayLabel,
   dayOfMonth,
   describeWeather,
   directionsUrl,
   formatDistance,
+  formatDriveTime,
   formatElevation,
   formatSunHours,
   formatTemp,
@@ -28,6 +33,7 @@ import { FlightLinks } from '../flights/FlightLinks';
 import { AboutPlace } from './AboutPlace';
 import { AirQualityNote } from './AirQualityNote';
 import { AnomalyNote } from './AnomalyNote';
+import { BestWindowChip } from './BestWindowChip';
 import { CalendarNote } from './CalendarNote';
 import { ClimateProfile } from './ClimateProfile';
 import { ConsensusBlock } from './ConsensusBlock';
@@ -39,6 +45,7 @@ import { ScoreBreakdown } from './ScoreBreakdown';
 import { SeaConditions } from './SeaConditions';
 import { SharePlaceButton } from './SharePlaceButton';
 import { SnowNote } from './SnowNote';
+import { StayLinks } from './StayLinks';
 import { SunTimeline } from './SunTimeline';
 
 function DayChip({
@@ -75,7 +82,11 @@ function DayChip({
 export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const closeDetail = useAppStore((s) => s.closeDetail);
   const setOrigin = useAppStore((s) => s.setOrigin);
+  const origin = useAppStore((s) => s.origin);
   const unit = useAppStore((s) => s.unit);
+  const system = useAppStore((s) => s.unitSystem);
+  const comfort = useAppStore((s) => s.comfort);
+  const currency = useAppStore((s) => s.currency);
   const pinned = useAppStore((s) => s.pinned);
   const addPin = useAppStore((s) => s.addPin);
   const removePin = useAppStore((s) => s.removePin);
@@ -100,10 +111,31 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const elevationText =
     place.elevation === undefined
       ? null
-      : `${isNotableTerrain(terrain) ? `${TERRAIN_LABEL[terrain]} · ` : ''}${formatElevation(place.elevation)}`;
+      : `${isNotableTerrain(terrain) ? `${TERRAIN_LABEL[terrain]} · ` : ''}${formatElevation(place.elevation, system)}`;
   const isHome = place.kind === 'home';
   const pinKey = place.kind === 'pin' ? place.key : `p:${place.key}`;
   const isPinned = pinned.some((p) => p.key === pinKey);
+
+  const { route: driveRoute } = useDriveRoute(
+    !isHome && origin
+      ? [
+          { lat: origin.lat, lon: origin.lon },
+          { lat: place.lat, lon: place.lon },
+        ]
+      : null,
+  );
+  const driveText = driveRoute
+    ? driveRoute.totalMinutes < 60
+      ? `${formatDriveTime(driveRoute.totalMinutes)} drive`
+      : `about ${formatDriveTime(driveRoute.totalMinutes)} by car`
+    : null;
+
+  // Check-in/check-out follow the best-window chip (same forecast + comfort
+  // profile); the fallback is one night on the selected day. Check-out is the
+  // morning after the window's last night.
+  const stayWindow = extended.forecast ? bestForecastWindow(extended.forecast.days, comfort) : null;
+  const stayCheckIn = stayWindow?.startDate ?? day.date;
+  const stayCheckOut = addIsoDays(stayWindow?.endDate ?? day.date, 1);
 
   const togglePin = () => {
     if (isPinned) {
@@ -132,8 +164,8 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
               {place.name} <span className="place-flag">{countryFlag(place.country)}</span>
             </h2>
             <p className="place-detail-sub">
-              {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm)} away`} · best on{' '}
-              {dayLabel(scored.best.date)}
+              {isHome ? 'Your starting point' : `${formatDistance(scored.distanceKm, system)} away`}
+              {driveText && ` · ${driveText}`} · best on {dayLabel(scored.best.date)}
               {elevationText && ` · ${elevationText}`}
             </p>
           </div>
@@ -189,7 +221,7 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
                 : ''}
               {place.airport.runways && place.airport.longestRunwayM ? ' · ' : ''}
               {place.airport.longestRunwayM
-                ? `longest ${place.airport.longestRunwayM.toLocaleString()} m`
+                ? `longest ${formatElevation(place.airport.longestRunwayM, system)}`
                 : ''}
             </p>
           )}
@@ -232,6 +264,14 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
           />
         ))}
       </div>
+
+      <BestWindowChip
+        forecast={extended.forecast}
+        onSelectDay={(d) => {
+          // The window can slide past the 7-day strip; only select real chips.
+          if (scored.days.some((x) => x.date === d)) setActiveDate(d);
+        }}
+      />
 
       <OutlookStrip
         forecast={extended.forecast}
@@ -298,13 +338,13 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
           {day.windMax !== undefined && (
             <div>
               <dt>Wind</dt>
-              <dd>{formatWind(day.windMax)}</dd>
+              <dd>{formatWind(day.windMax, system)}</dd>
             </div>
           )}
         </dl>
       </div>
 
-      <SeaConditions place={place} activeDate={day.date} unit={unit} />
+      <SeaConditions place={place} activeDate={day.date} unit={unit} system={system} />
 
       <ScoreBreakdown day={day} />
 
@@ -335,6 +375,16 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
       <PracticalInfo place={place} timezone={extended.forecast?.timezone} />
 
       {!isHome && <FlightLinks place={place} date={day.date} />}
+
+      {!isHome && (
+        <StayLinks
+          placeName={place.name}
+          countryName={countryDisplayName(place)}
+          checkIn={stayCheckIn}
+          checkOut={stayCheckOut}
+          currency={currency}
+        />
+      )}
 
       {!isHome && (
         <div className="detail-actions">

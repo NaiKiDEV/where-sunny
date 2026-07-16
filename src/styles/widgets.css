@@ -792,7 +792,7 @@
   right: 0;
   left: auto;
   width: min(300px, 84vw);
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-3);
 }
 
@@ -810,6 +810,27 @@
 .settings-section .segmented {
   align-self: flex-start;
   margin-inline-start: var(--space-3);
+}
+
+/* Compact preference rows: the title and its segmented toggle share one line
+   so the growing list of settings stays short. Only for fixed-width controls -
+   the currency/passport pickers stay stacked so their variable-length values
+   don't make the layout jump. */
+.settings-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.settings-row .menu-popover-title {
+  padding-block: 0;
+  flex-shrink: 0;
+}
+
+.settings-row .segmented {
+  align-self: center;
+  margin-inline-start: 0;
 }
 
 /* ---- currency picker (settings) ---- */

@@ -3,6 +3,7 @@ import { CalendarDays, ChevronDown, Compass, MapPin, Plane, Route, Search, Sun }
 import { TIER_ORDER, TRAVEL_TIERS } from '../../core/candidates/tiers';
 import { TIME_WINDOWS } from '../../core/scoring/window';
 import type { WindowId } from '../../core/types';
+import { formatDistance, type UnitSystem } from '../../lib/format';
 import { useAppStore } from '../../state/store';
 import { SelectMenu, type SelectOption } from './SelectMenu';
 import { SettingsMenu } from './SettingsMenu';
@@ -23,11 +24,13 @@ const WINDOW_OPTIONS: SelectOption<WindowId>[] = TIME_WINDOWS.map(({ id, label }
 }));
 
 /** Tier hints come straight from each tier's search radius so they never drift. */
-const TIER_OPTIONS: SelectOption<(typeof TIER_ORDER)[number]>[] = TIER_ORDER.map((id) => ({
-  id,
-  label: TRAVEL_TIERS[id].label,
-  hint: `${TRAVEL_TIERS[id].radiusKm.toLocaleString('en-US')} km radius`,
-}));
+function tierOptions(system: UnitSystem): SelectOption<(typeof TIER_ORDER)[number]>[] {
+  return TIER_ORDER.map((id) => ({
+    id,
+    label: TRAVEL_TIERS[id].label,
+    hint: `${formatDistance(TRAVEL_TIERS[id].radiusKm, system)} radius`,
+  }));
+}
 
 /**
  * The origin chip doubles as an action menu: it names your starting point and,
@@ -187,6 +190,7 @@ export function FilterControls({ variant = 'floating' }: { variant?: 'floating' 
   const timeWindow = useAppStore((s) => s.timeWindow);
   const setTier = useAppStore((s) => s.setTier);
   const setTimeWindow = useAppStore((s) => s.setTimeWindow);
+  const system = useAppStore((s) => s.unitSystem);
 
   return (
     <>
@@ -199,7 +203,7 @@ export function FilterControls({ variant = 'floating' }: { variant?: 'floating' 
         variant={variant}
       />
       <SelectMenu
-        options={TIER_OPTIONS}
+        options={tierOptions(system)}
         value={tier}
         onChange={setTier}
         ariaLabel="How far"

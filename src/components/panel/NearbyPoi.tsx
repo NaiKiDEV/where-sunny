@@ -3,10 +3,12 @@ import type { PointOfInterest } from '../../core/poi/wikipedia';
 import type { LatLon } from '../../core/types';
 import { useNearbyPoi } from '../../hooks/useNearbyPoi';
 import { formatDistance } from '../../lib/format';
+import { useAppStore } from '../../state/store';
 
 const M_PER_KM = 1000;
 
 function PoiCard({ poi }: { poi: PointOfInterest }) {
+  const system = useAppStore((s) => s.unitSystem);
   return (
     <a className="poi-card" href={poi.url} target="_blank" rel="noopener noreferrer">
       <span className="poi-thumb">
@@ -19,7 +21,7 @@ function PoiCard({ poi }: { poi: PointOfInterest }) {
         )}
       </span>
       <span className="poi-title">{poi.title}</span>
-      <span className="poi-dist">{formatDistance(poi.distanceM / M_PER_KM)}</span>
+      <span className="poi-dist">{formatDistance(poi.distanceM / M_PER_KM, system)}</span>
     </a>
   );
 }

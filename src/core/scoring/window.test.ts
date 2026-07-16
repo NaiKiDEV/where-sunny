@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { windowDates } from './window';
+import { addIsoDays, windowDates } from './window';
 
 // 2026-07-10 is a Friday
 const FRIDAY = new Date(2026, 6, 10, 15, 30);
@@ -46,5 +46,17 @@ describe('windowDates', () => {
         }
       }
     }
+  });
+});
+
+describe('addIsoDays', () => {
+  it('adds days within a month', () => {
+    expect(addIsoDays('2026-07-10', 1)).toBe('2026-07-11');
+    expect(addIsoDays('2026-07-10', 3)).toBe('2026-07-13');
+  });
+
+  it('rolls over month and year boundaries', () => {
+    expect(addIsoDays('2026-07-31', 1)).toBe('2026-08-01');
+    expect(addIsoDays('2026-12-31', 1)).toBe('2027-01-01');
   });
 });

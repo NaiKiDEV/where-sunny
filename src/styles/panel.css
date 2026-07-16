@@ -676,7 +676,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: var(--space-3);
+  gap: var(--space-4);
 }
 
 .place-detail-title-text {
@@ -1542,7 +1542,19 @@
 .flight-provider-links {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-3);
+  gap: var(--space-1) var(--space-3);
+}
+
+/* FlightProviderLinks nested inside a composed row (provider links + ground
+   transport link) dissolves so all links wrap as siblings of one row. */
+.flight-provider-links > .flight-provider-links {
+  display: contents;
+}
+
+/* Rome2Rio ground-transport link - a quieter secondary option in the row,
+   not a fourth equal provider. Hover underline comes from .airport-link. */
+.airport-link--ground {
+  color: var(--color-ink-soft);
 }
 
 .flight-links-note {

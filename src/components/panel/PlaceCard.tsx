@@ -15,6 +15,7 @@ interface PlaceCardProps {
 export function PlaceCard({ scored, rank }: PlaceCardProps) {
   const selectPlace = useAppStore((s) => s.selectPlace);
   const unit = useAppStore((s) => s.unit);
+  const system = useAppStore((s) => s.unitSystem);
   const { place, best, distanceKm, score } = scored;
 
   return (
@@ -30,7 +31,7 @@ export function PlaceCard({ scored, rank }: PlaceCardProps) {
           </span>
           <span className="place-meta">
             {dayLabel(best.date)} · {formatSunHours(best.sunshineDuration)} sun ·{' '}
-            {formatTemp(best.tempMax, unit)} · {formatDistance(distanceKm)}
+            {formatTemp(best.tempMax, unit)} · {formatDistance(distanceKm, system)}
           </span>
         </span>
         <span
