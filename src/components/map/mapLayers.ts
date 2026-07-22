@@ -42,9 +42,17 @@ const AIRPORT_BLUE = '#2f6ea6';
 const AIRPORT_LABEL_FILTER_QUIET = ['all', ['get', 'large'], ['!=', ['get', 'iata'], '']];
 const AIRPORT_LABEL_FILTER_EMPHASIZED = ['!=', ['get', 'iata'], ''];
 
-// 1×1 transparent PNG the image source starts on before a field is computed.
-const TRANSPARENT_PNG =
-  'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+// 1×1 transparent placeholder the image source starts on before a field is
+// computed. Generated via canvas (RGBA) rather than a hand-written base64 blob:
+// MapLibre v5 decodes `image` sources with createImageBitmap(), which throws
+// "The source image could not be decoded" on a minimal grayscale+alpha PNG. A
+// canvas-encoded RGBA PNG decodes cleanly - the same path the field image uses.
+function transparentPng(): string {
+  const canvas = document.createElement('canvas');
+  canvas.width = 1;
+  canvas.height = 1;
+  return canvas.toDataURL();
+}
 const PLACEHOLDER_COORDS: [[number, number], [number, number], [number, number], [number, number]] = [
   [-1, 1],
   [1, 1],
@@ -160,7 +168,7 @@ export function addMapLayers(map: MapLibreMap): void {
   // Also below the pins; only one of heatmap/field is ever visible at a time.
   map.addSource(WEATHER_FIELD_SOURCE, {
     type: 'image',
-    url: TRANSPARENT_PNG,
+    url: transparentPng(),
     coordinates: PLACEHOLDER_COORDS,
   });
   map.addLayer({
