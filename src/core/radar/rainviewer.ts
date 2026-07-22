@@ -68,6 +68,29 @@ export function frameTileUrl(host: string, frame: RadarFrame): string {
   return `${host}${frame.path}/${RADAR_TILE_SIZE}/{z}/{x}/{y}/${COLOR_SCHEME}/${TILE_OPTIONS}.png`;
 }
 
+/** A playable frame: its tile template plus whether it is observed or predicted. */
+export interface RadarFrameView {
+  /** Unix seconds of the frame (past capture or nowcast target). */
+  time: number;
+  /** Tile URL template for this frame. */
+  url: string;
+  kind: 'past' | 'forecast';
+}
+
+/**
+ * All frames in playback order - observed history first, then the short-range
+ * nowcast - each resolved to a tile template. This is what the timeline scrubs
+ * through; the last 'past' frame is "now".
+ */
+export function radarFrames(index: RadarIndex): RadarFrameView[] {
+  const toView = (kind: 'past' | 'forecast') => (frame: RadarFrame): RadarFrameView => ({
+    time: frame.time,
+    url: frameTileUrl(index.host, frame),
+    kind,
+  });
+  return [...index.past.map(toView('past')), ...index.nowcast.map(toView('forecast'))];
+}
+
 export interface FetchRadarOptions {
   fetchImpl?: typeof fetch;
 }

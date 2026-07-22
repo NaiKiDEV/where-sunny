@@ -5,6 +5,7 @@ import {
   latestPastFrame,
   latestRadarTileUrl,
   parseRadarIndex,
+  radarFrames,
 } from './rainviewer';
 
 function jsonResponse(body: unknown, status = 200): Response {
@@ -81,6 +82,21 @@ describe('frameTileUrl', () => {
     expect(frameTileUrl(HOST, { time: 1, path: '/v2/radar/abc' })).toBe(
       `${HOST}/v2/radar/abc/256/{z}/{x}/{y}/2/1_1.png`,
     );
+  });
+});
+
+describe('radarFrames', () => {
+  it('orders observed frames before the nowcast, each with a tile url and kind', () => {
+    const frames = radarFrames(parseRadarIndex(INDEX_JSON)!);
+    expect(frames).toEqual([
+      { time: 1784135400, url: `${HOST}/v2/radar/older/256/{z}/{x}/{y}/2/1_1.png`, kind: 'past' },
+      { time: 1784142600, url: `${HOST}/v2/radar/latest/256/{z}/{x}/{y}/2/1_1.png`, kind: 'past' },
+      { time: 1784143200, url: `${HOST}/v2/radar/next/256/{z}/{x}/{y}/2/1_1.png`, kind: 'forecast' },
+    ]);
+  });
+
+  it('is empty when the feed lists no frames', () => {
+    expect(radarFrames({ host: HOST, past: [], nowcast: [] })).toEqual([]);
   });
 });
 

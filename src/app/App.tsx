@@ -1,5 +1,6 @@
 import { MapLegend } from '../components/map/MapLegend';
 import { MapView } from '../components/map/MapView';
+import { RadarTimeline } from '../components/map/RadarTimeline';
 import { ResultsPanel } from '../components/panel/ResultsPanel';
 import { BannedCountriesSheet } from '../components/widgets/BannedCountriesSheet';
 import { ScoreInfoSheet } from '../components/widgets/ScoreInfoSheet';
@@ -51,6 +52,7 @@ export default function App() {
             error={error}
           />
           <MapLegend />
+          <RadarTimeline />
         </>
       ) : (
         <WelcomeOverlay />

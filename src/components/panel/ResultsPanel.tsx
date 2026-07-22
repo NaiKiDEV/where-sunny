@@ -41,9 +41,19 @@ function DetailLoading({ place, error, onBack }: { place: Place; error: Error | 
   );
 }
 
-// Top snap matches .drawer-content height (96%) so the sheet bottom lands exactly
-// on the viewport bottom when fully open - otherwise the last row clips off-screen.
-const SNAP_POINTS = [0.4, 0.7, 0.96];
+// Lowest snap is a bare handle lip so the sheet can tuck fully away and hand the
+// whole map to the user, while a grabbable strip stays to pull it back up. It
+// must be a fraction, not a px value: vaul translates by
+// `viewportHeight - snapHeight`, but .drawer-content is height:96% pinned to
+// bottom:0, so its top starts 4%vh down and the visible height is really
+// `(snap - 0.04) * viewportHeight`. A px lip (e.g. 32px) nets ~2px and vanishes;
+// 0.08 nets ~4%vh (~the handle's height). Top snap matches the 96% height so the
+// sheet bottom lands exactly on the viewport bottom when fully open - otherwise
+// the last row clips off-screen.
+const LIP_SNAP = 0.08;
+const SNAP_POINTS = [LIP_SNAP, 0.4, 0.7, 0.96];
+/** Where the sheet rests by default and lifts to when a detail opens. */
+const DEFAULT_SNAP = 0.7;
 
 interface ResultsPanelProps {
   results: ScoredPlace[];
@@ -63,7 +73,7 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   const bannedManagerOpen = useAppStore((s) => s.bannedManagerOpen);
   const settingsOpen = useAppStore((s) => s.settingsOpen);
   const preview = usePreviewPlace();
-  const [snap, setSnap] = useState<number | string | null>(SNAP_POINTS[1]);
+  const [snap, setSnap] = useState<number | string | null>(DEFAULT_SNAP);
 
   const selected =
     pinnedScored.find((r) => r.place.key === selectedPlaceKey) ??
@@ -76,11 +86,12 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   const detailKey = previewPlace?.key ?? selectedPlaceKey;
 
   // Opening a detail (often by tapping a map pin) should lift the sheet into
-  // view if it's sitting at the lowest snap - never collapse it if already up.
+  // view when it's tucked at the lip or a low snap - never collapse it if it is
+  // already at or above the default resting snap.
   useEffect(() => {
     if (!detailKey) return;
     setSnap((current) =>
-      typeof current === 'number' && current < SNAP_POINTS[1] ? SNAP_POINTS[1] : current,
+      typeof current === 'number' && current >= DEFAULT_SNAP ? current : DEFAULT_SNAP,
     );
   }, [detailKey]);
 

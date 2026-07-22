@@ -7,6 +7,7 @@
 import type { Map as MapLibreMap, RasterTileSource } from 'maplibre-gl';
 import { RADAR_TILE_MAX_ZOOM, RADAR_TILE_SIZE } from '../../core/radar/rainviewer';
 import { PLACE_CIRCLES_LAYER } from './mapLayers';
+import { WIND_ARROW_LAYER } from './windArrowLayer';
 
 const RADAR_SOURCE = 'rain-radar';
 const RADAR_LAYER = 'rain-radar-raster';
@@ -23,6 +24,13 @@ function ensureRadarLayer(map: MapLibreMap, tileUrl: string): void {
     // instead of requesting tiles that don't exist.
     maxzoom: RADAR_TILE_MAX_ZOOM,
   });
+  // Anchor beneath the wind arrows when present (so the wash never buries them),
+  // otherwise beneath the score circles, like the other ambient layers.
+  const before = map.getLayer(WIND_ARROW_LAYER)
+    ? WIND_ARROW_LAYER
+    : map.getLayer(PLACE_CIRCLES_LAYER)
+      ? PLACE_CIRCLES_LAYER
+      : undefined;
   map.addLayer(
     {
       id: RADAR_LAYER,
@@ -33,8 +41,7 @@ function ensureRadarLayer(map: MapLibreMap, tileUrl: string): void {
         'raster-resampling': 'linear',
       },
     },
-    // Anchor beneath the score circles, like the other ambient layers.
-    map.getLayer(PLACE_CIRCLES_LAYER) ? PLACE_CIRCLES_LAYER : undefined,
+    before,
   );
 }
 

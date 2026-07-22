@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CloudRain, EyeOff, Layers, Radar, Sun, type LucideIcon } from 'lucide-react';
+import { CloudRain, EyeOff, Layers, Navigation, Radar, Sun, type LucideIcon } from 'lucide-react';
 import { type OverlayMode, type OverlayStyle, useAppStore } from '../../state/store';
 import { Segmented } from './Segmented';
 
@@ -28,8 +28,10 @@ export function WeatherLayerControl() {
   const setOverlay = useAppStore((s) => s.setOverlay);
   const overlayStyle = useAppStore((s) => s.overlayStyle);
   const setOverlayStyle = useAppStore((s) => s.setOverlayStyle);
+  const windArrows = useAppStore((s) => s.windArrows);
+  const setWindArrows = useAppStore((s) => s.setWindArrows);
   const [isOpen, setOpen] = useState(false);
-  const isActive = overlay !== 'off';
+  const isActive = overlay !== 'off' || windArrows;
   // The glow/field style picker only applies to the forecast washes; live
   // radar renders provider tiles and has no style of its own.
   const hasStylePicker = overlay === 'sun' || overlay === 'rain';
@@ -83,6 +85,30 @@ export function WeatherLayerControl() {
                 />
               </div>
             )}
+            {/* Independent of the wash: arrows show the steering wind that
+                carries rain areas. Toggling keeps the popover open so the
+                effect on the map behind it can be judged and undone. */}
+            <div className="layer-arrows">
+              <button
+                type="button"
+                role="menuitemcheckbox"
+                aria-checked={windArrows}
+                className={`menu-item layer-arrows-toggle${windArrows ? ' is-active' : ''}`}
+                onClick={() => setWindArrows(!windArrows)}
+              >
+                <span className="menu-item-icon" aria-hidden>
+                  <Navigation size={18} strokeWidth={2} />
+                </span>
+                <span className="menu-item-text">
+                  <span className="menu-item-label">Rain movement</span>
+                  <span className="menu-item-hint">Wind steering direction</span>
+                </span>
+                <span
+                  className={`layer-switch${windArrows ? ' is-on' : ''}`}
+                  aria-hidden
+                />
+              </button>
+            </div>
           </div>
         </>
       )}

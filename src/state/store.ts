@@ -46,6 +46,12 @@ export type OverlayMode = 'off' | 'sun' | 'rain' | 'radar';
 /** How the wash renders: a per-point soft glow, or an interpolated filled field. */
 export type OverlayStyle = 'glow' | 'field';
 
+/** Timeline metadata for one radar frame (tile URLs stay out of the store). */
+export interface RadarFrameMeta {
+  time: number;
+  kind: 'past' | 'forecast';
+}
+
 interface AppState {
   origin: Origin | null;
   /** User-picked departure airport for flight links; null = auto (nearest to origin). */
@@ -63,6 +69,12 @@ interface AppState {
   passportCountry: string | null;
   overlay: OverlayMode;
   overlayStyle: OverlayStyle;
+  /** Show rain-movement (steering wind) arrows over the map; independent of the wash. */
+  windArrows: boolean;
+  /** Radar playback timeline (not persisted): the frame list, playhead, and play state. */
+  radarFrames: RadarFrameMeta[];
+  radarFrameIndex: number;
+  radarPlaying: boolean;
   pinned: Place[];
   /** Recently searched/previewed destinations for the explore empty state
    * (persisted; most-recent-first, deduped by key, capped at MAX_RECENT_PLACES). */
@@ -91,6 +103,13 @@ interface AppState {
   setPassportCountry: (code: string | null) => void;
   setOverlay: (overlay: OverlayMode) => void;
   setOverlayStyle: (style: OverlayStyle) => void;
+  setWindArrows: (on: boolean) => void;
+  /** Replace the radar frame list, clamping the playhead into the new range. */
+  setRadarFrames: (frames: RadarFrameMeta[]) => void;
+  setRadarFrameIndex: (index: number) => void;
+  setRadarPlaying: (playing: boolean) => void;
+  /** Advance the playhead one frame, looping back to the start at the end. */
+  stepRadarFrame: () => void;
   addPin: (place: Place) => void;
   removePin: (key: string) => void;
   /** Record a searched/previewed place at the head of the recents list. Banned
@@ -142,6 +161,10 @@ export const useAppStore = create<AppState>()(
       passportCountry: null,
       overlay: 'off',
       overlayStyle: 'field',
+      windArrows: false,
+      radarFrames: [],
+      radarFrameIndex: 0,
+      radarPlaying: false,
       pinned: [],
       recentPlaces: [],
       selectedPlaceKey: null,
@@ -174,6 +197,28 @@ export const useAppStore = create<AppState>()(
       setPassportCountry: (passportCountry) => set({ passportCountry }),
       setOverlay: (overlay) => set({ overlay }),
       setOverlayStyle: (overlayStyle) => set({ overlayStyle }),
+      setWindArrows: (windArrows) => set({ windArrows }),
+      setRadarFrames: (radarFrames) =>
+        set((state) => ({
+          radarFrames,
+          radarFrameIndex:
+            radarFrames.length === 0
+              ? 0
+              : Math.min(state.radarFrameIndex, radarFrames.length - 1),
+        })),
+      setRadarFrameIndex: (index) =>
+        set((state) => {
+          if (state.radarFrames.length === 0) return { radarFrameIndex: 0 };
+          const clamped = Math.max(0, Math.min(index, state.radarFrames.length - 1));
+          return { radarFrameIndex: clamped };
+        }),
+      setRadarPlaying: (radarPlaying) => set({ radarPlaying }),
+      stepRadarFrame: () =>
+        set((state) => {
+          const count = state.radarFrames.length;
+          if (count === 0) return { radarFrameIndex: 0 };
+          return { radarFrameIndex: (state.radarFrameIndex + 1) % count };
+        }),
       addPin: (place) =>
         set((state) => {
           if (isEffectivelyBanned(place, new Set(state.userBannedCountries))) return state;
@@ -313,6 +358,7 @@ export const useAppStore = create<AppState>()(
         passportCountry: state.passportCountry,
         overlay: state.overlay,
         overlayStyle: state.overlayStyle,
+        windArrows: state.windArrows,
         pinned: state.pinned,
         recentPlaces: state.recentPlaces,
         trips: state.trips,
