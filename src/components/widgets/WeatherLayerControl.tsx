@@ -93,7 +93,12 @@ export function WeatherLayerControl() {
                 type="button"
                 role="menuitemcheckbox"
                 aria-checked={windArrows}
-                className={`menu-item layer-arrows-toggle${windArrows ? ' is-active' : ''}`}
+                // On/off lives entirely in the switch pill below - not in an
+                // `.is-active` row wash. That wash is identical to `.menu-item:hover`,
+                // and because this toggle keeps the popover open, an OFF toggle under
+                // the cursor still looked washed (i.e. still "on"). The pill is the
+                // single source of on/off truth. (See docs/ANIMATION-LANGUAGE.md §6.)
+                className="menu-item layer-arrows-toggle"
                 onClick={() => setWindArrows(!windArrows)}
               >
                 <span className="menu-item-icon" aria-hidden>

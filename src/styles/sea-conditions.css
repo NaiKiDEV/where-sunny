@@ -96,7 +96,7 @@
   flex: none;
   margin-left: auto;
   color: var(--color-ink-faint);
-  transition: transform 140ms ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .sea-chevron-open {
@@ -117,6 +117,8 @@
   color: var(--color-ink-faint);
 }
 
+/* The revealed forecast window rises in when the card expands; collapse is an
+   instant React unmount, so there is no exit animation to build. */
 .sea-days {
   display: flex;
   flex-direction: column;
@@ -124,6 +126,7 @@
   margin: 0;
   padding: 0 var(--space-2);
   list-style: none;
+  animation: reveal-rise var(--dur-base) var(--ease-out);
 }
 
 .sea-day {
@@ -159,4 +162,14 @@
 
 .sea-day-empty {
   color: var(--color-ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sea-days {
+    animation: none;
+  }
+
+  .sea-chevron {
+    transition: none;
+  }
 }

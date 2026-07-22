@@ -9,7 +9,7 @@
  */
 import type { GeoJSONSource, Map as MapLibreMap } from 'maplibre-gl';
 import type { WindArrow } from '../../core/wind/steering';
-import { PLACE_CIRCLES_LAYER } from './mapLayers';
+import { overlayFadeMs, PLACE_CIRCLES_LAYER } from './mapLayers';
 
 const ARROW_SOURCE = 'wind-arrows';
 /** Exported so the radar layer can anchor itself beneath the arrows. */
@@ -17,6 +17,8 @@ export const WIND_ARROW_LAYER = 'wind-arrows-symbol';
 const ARROW_LAYER = WIND_ARROW_LAYER;
 const ARROW_ICON = 'wind-arrow';
 const ARROW_PX = 40;
+// Resting opacity when arrows are on; toggling drives icon-opacity 0 <-> this.
+const ARROW_OPACITY = 0.9;
 
 // Classic up-arrow (pointing north) in a 24×24 box; icon-rotate spins it to the
 // movement bearing. Ink fill with a white halo keeps it legible over blue radar.
@@ -84,7 +86,9 @@ function ensureArrowLayer(map: MapLibreMap): void {
         'icon-ignore-placement': true,
       },
       paint: {
-        'icon-opacity': 0.9,
+        // Start transparent so the first enable fades in via the opacity transition.
+        'icon-opacity': 0,
+        'icon-opacity-transition': { duration: overlayFadeMs() },
       },
     },
     // Anchor beneath the score circles so pins stay dominant on top.
@@ -93,13 +97,19 @@ function ensureArrowLayer(map: MapLibreMap): void {
 }
 
 /**
- * Draw the given arrows (adding source + layer on first use), or hide the layer
- * when `arrows` is null. After setting data the layer is re-anchored just below
- * the pins so it stays above a radar layer that may have been added later.
+ * Draw the given arrows (adding source + layer on first use), or fade the layer
+ * out when `arrows` is null. Toggling drives icon-opacity (0 <-> ARROW_OPACITY)
+ * instead of hard visibility so arrows ease in/out; the grid is sparse, so a
+ * transparent layer left in place is cheap and needs no hide/lifecycle juggling.
+ * After setting data the layer is re-anchored just below the pins so it stays
+ * above a radar layer that may have been added later.
  */
 export function updateWindArrows(map: MapLibreMap, arrows: WindArrow[] | null): void {
   if (arrows === null) {
-    if (map.getLayer(ARROW_LAYER)) map.setLayoutProperty(ARROW_LAYER, 'visibility', 'none');
+    if (map.getLayer(ARROW_LAYER)) {
+      map.setPaintProperty(ARROW_LAYER, 'icon-opacity-transition', { duration: overlayFadeMs() });
+      map.setPaintProperty(ARROW_LAYER, 'icon-opacity', 0);
+    }
     return;
   }
   ensureArrowLayer(map);
@@ -118,5 +128,8 @@ export function updateWindArrows(map: MapLibreMap, arrows: WindArrow[] | null): 
   if (map.getLayer(ARROW_LAYER) && map.getLayer(PLACE_CIRCLES_LAYER)) {
     map.moveLayer(ARROW_LAYER, PLACE_CIRCLES_LAYER);
   }
-  if (map.getLayer(ARROW_LAYER)) map.setLayoutProperty(ARROW_LAYER, 'visibility', 'visible');
+  if (map.getLayer(ARROW_LAYER)) {
+    map.setPaintProperty(ARROW_LAYER, 'icon-opacity-transition', { duration: overlayFadeMs() });
+    map.setPaintProperty(ARROW_LAYER, 'icon-opacity', ARROW_OPACITY);
+  }
 }

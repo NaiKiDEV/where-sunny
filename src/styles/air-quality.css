@@ -53,7 +53,7 @@
   flex: none;
   margin-left: auto;
   color: var(--color-ink-faint);
-  transition: transform 140ms ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .air-note-chevron-open {
@@ -116,7 +116,7 @@
   color: var(--color-danger);
 }
 
-/* Expanded per-day list. */
+/* Expanded per-day list - rises in on expand; collapse is an instant unmount. */
 .air-note-days {
   display: flex;
   flex-direction: column;
@@ -124,6 +124,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
+  animation: reveal-rise var(--dur-base) var(--ease-out);
 }
 
 .air-note-day-row {
@@ -144,4 +145,14 @@
   font-size: var(--text-xs);
   font-weight: 650;
   color: var(--color-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .air-note-days {
+    animation: none;
+  }
+
+  .air-note-chevron {
+    transition: none;
+  }
 }

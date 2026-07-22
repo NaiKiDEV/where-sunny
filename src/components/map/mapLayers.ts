@@ -290,6 +290,21 @@ function setLayerVisible(map: MapLibreMap, id: string, visible: boolean): void {
 }
 
 /**
+ * Cross-fade duration (ms) for overlay layers toggling on/off, so ambient layers
+ * ease in/out via paint opacity instead of popping. Mirrors the --dur-slow token
+ * (320ms) and collapses to 0 under prefers-reduced-motion, so those users get the
+ * instant toggle instead of a transition (ANIMATION-LANGUAGE §8). Shared by the
+ * radar and wind-arrow layers.
+ */
+export function overlayFadeMs(): number {
+  const prefersReduced =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  return prefersReduced ? 0 : 320;
+}
+
+/**
  * Drive the weather wash from the current mode + style. Only one renderer is
  * ever visible: 'glow' uses the GPU heatmap, 'field' rebuilds the interpolated
  * image from the same points. Both sit below the pins.

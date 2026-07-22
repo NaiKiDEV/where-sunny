@@ -135,3 +135,89 @@ ul {
   border-color: var(--color-sun-600);
   background: var(--color-sun-100);
 }
+
+/* ============ shared motion (see docs/ANIMATION-LANGUAGE.md) ============ */
+/* The complete set of entrance keyframes. Components reference these by name -
+   do NOT define new @keyframes per surface. */
+@keyframes reveal-rise {
+  /* the workhorse: fade + rise into place */
+  from {
+    opacity: 0;
+    transform: translateY(var(--reveal-rise));
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes popover-in {
+  /* menus/popovers anchored below a trigger */
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dialog-in {
+  /* centered modal cards */
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  /* backdrops, map markers, opacity-only reveals */
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.reveal {
+  animation: reveal-rise var(--dur-slow) var(--ease-out) both;
+}
+
+/* A container whose direct children enter with a light, capped stagger (used on
+   .place-detail and .results-list). `both` holds the from-state before each
+   child's delayed start so nothing flashes. Capped at 6 - later rows are mostly
+   below the fold and take the 0ms default. */
+.reveal-group > * {
+  animation: reveal-rise var(--dur-base) var(--ease-out) both;
+}
+.reveal-group > *:nth-child(1) {
+  animation-delay: 0ms;
+}
+.reveal-group > *:nth-child(2) {
+  animation-delay: var(--reveal-stagger);
+}
+.reveal-group > *:nth-child(3) {
+  animation-delay: calc(var(--reveal-stagger) * 2);
+}
+.reveal-group > *:nth-child(4) {
+  animation-delay: calc(var(--reveal-stagger) * 3);
+}
+.reveal-group > *:nth-child(5) {
+  animation-delay: calc(var(--reveal-stagger) * 4);
+}
+.reveal-group > *:nth-child(6) {
+  animation-delay: calc(var(--reveal-stagger) * 5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal,
+  .reveal-group > * {
+    animation: none;
+  }
+}

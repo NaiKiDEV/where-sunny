@@ -85,15 +85,25 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
   const isDetail = previewPlace !== null || selected !== null;
   const detailKey = previewPlace?.key ?? selectedPlaceKey;
 
-  // Opening a detail (often by tapping a map pin) should lift the sheet into
-  // view when it's tucked at the lip or a low snap - never collapse it if it is
-  // already at or above the default resting snap.
+  // Opening any surface that takes over the sheet - a place detail (often by
+  // tapping a map pin) or the trips view - should lift it into view when it's
+  // tucked at the lip or a low snap, and never collapse it if it is already at
+  // or above the default resting snap. `openTrips` clears the selection, so a
+  // detailKey and trips are never live together; keying on both makes the lift
+  // fire when either opens or when selection jumps between places.
+  const takeoverKey = tripsOpen ? 'trips' : detailKey;
   useEffect(() => {
-    if (!detailKey) return;
+    if (!takeoverKey) return;
     setSnap((current) =>
       typeof current === 'number' && current >= DEFAULT_SNAP ? current : DEFAULT_SNAP,
     );
-  }, [detailKey]);
+  }, [takeoverKey]);
+
+  // A stable id for the currently shown view. Switching it remounts the wrapper
+  // below so the .reveal entrance replays on every list <-> detail <-> trips
+  // swap (and when the detail jumps between places). openTrips clears the
+  // selection, so a detailKey and trips are never live at the same time.
+  const viewKey = detailKey ?? (tripsOpen ? 'trips' : 'list');
 
   let content: ReactNode;
   if (previewPlace) {
@@ -119,8 +129,16 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
     );
   }
 
+  // Keyed so React remounts on a view switch and the fade+rise re-plays; the
+  // swapped view is the incoming content, cross-fading in over a hard cut.
+  const view = (
+    <div key={viewKey} className="panel-view reveal">
+      {content}
+    </div>
+  );
+
   if (!isMobile) {
-    return <aside className="results-panel">{content}</aside>;
+    return <aside className="results-panel">{view}</aside>;
   }
 
   // vaul traps focus even with modal={false}, which makes any overlaid text
@@ -154,7 +172,7 @@ export function ResultsPanel({ results, pinnedScored, home, isLoading, error }: 
             <FilterControls variant="inset" />
           </div>
         )}
-        <div className="drawer-scroll">{content}</div>
+        <div className="drawer-scroll">{view}</div>
       </Drawer.Content>
     </Drawer.Root>
   );

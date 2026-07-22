@@ -121,7 +121,10 @@ function TripStopRow({
   const system = useAppStore((s) => s.unitSystem);
 
   return (
-    <li className="trip-stop">
+    // .reveal (§5.3): a newly added or moved stop rises in on mount so the user
+    // sees where it landed. Only newly inserted <li>s animate - existing rows
+    // keep their DOM node across renders and don't re-run the entrance.
+    <li className="trip-stop reveal">
       {legKm !== null && (
         <span className="trip-leg">
           ↳{' '}

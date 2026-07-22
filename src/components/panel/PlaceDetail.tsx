@@ -152,7 +152,10 @@ export function PlaceDetail({ scored }: { scored: ScoredPlace }) {
   const startFromHere = () => setOrigin({ lat: place.lat, lon: place.lon, label: place.name });
 
   return (
-    <div className="place-detail">
+    // reveal-group: the container owns the section entrances - each direct child
+    // (header + section components) rises in with the capped stagger when a
+    // place opens. Section components deliberately add no entrance of their own.
+    <div className="place-detail reveal-group">
       <header className="panel-sticky-header">
         <button type="button" className="back-button" onClick={closeDetail}>
           <ChevronLeft size={16} aria-hidden /> Back

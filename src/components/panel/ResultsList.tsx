@@ -87,7 +87,9 @@ export function ResultsList({ results, pinnedScored, home, isLoading, error }: R
   const isDimRange = rangeResults.length > 0 && rangeResults[0].score < DIM_RANGE_SCORE;
 
   return (
-    <div className="results-list">
+    // reveal-group: the list blocks (home anchor, section headers, place lists)
+    // settle in with the capped stagger on first paint.
+    <div className="results-list reveal-group">
       {home && <HomeAnchor home={home} best={results[0] ?? null} />}
 
       <div className="section-header">

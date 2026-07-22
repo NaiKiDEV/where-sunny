@@ -113,8 +113,8 @@
   font-weight: 650;
   max-width: 70vw;
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .location-chip:hover {
@@ -174,13 +174,40 @@
   box-shadow: var(--shadow-chip);
   font-size: var(--text-base);
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease;
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .icon-chip:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-soft);
+}
+
+/* Press feedback (§4a): the hover lift settles at --dur-fast, but a tap sinks
+   the chip back to rest at --dur-instant so the press reads as a press, not a
+   slow settle. Shared by the floating chips that lift; harmless on the inset
+   select-chip, which rests at translateY(0) anyway. */
+.location-chip:active,
+.icon-chip:active,
+.select-chip:active {
+  transform: translateY(0);
+  transition-duration: var(--dur-instant);
+}
+
+/* Reduced motion (§8): the hover lift and press sink are the only translate on
+   these chips, so drop them - color and shadow feedback stays. suggest-chip is
+   included here (it lifts too) though it is defined further down. */
+@media (prefers-reduced-motion: reduce) {
+  .location-chip:hover,
+  .location-chip:active,
+  .icon-chip:hover,
+  .icon-chip:active,
+  .select-chip:hover,
+  .select-chip:active,
+  .suggest-chip:hover,
+  .suggest-chip:active {
+    transform: none;
+  }
 }
 
 /* Comfortable 44px tap targets on touch layouts (the 40px default sat just
@@ -218,8 +245,12 @@
   position: fixed;
   inset: 0;
   z-index: 1;
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
+/* Anchored below its trigger, so it rises the default -6px into place. The
+   layer, filter (SelectMenu), and settings popovers all reuse this class, so
+   this one entrance covers every menu popover. */
 .menu-popover {
   position: absolute;
   top: calc(100% + var(--space-2));
@@ -233,6 +264,14 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  animation: popover-in var(--dur-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .menu-backdrop,
+  .menu-popover {
+    animation: none;
+  }
 }
 
 .menu-item {
@@ -242,7 +281,7 @@
   text-align: left;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-sm);
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .menu-item:hover {
@@ -360,7 +399,7 @@
   height: 20px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--color-ink-faint) 45%, transparent);
-  transition: background 140ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .layer-switch::after {
@@ -373,7 +412,7 @@
   border-radius: 50%;
   background: var(--color-surface);
   box-shadow: 0 1px 3px rgba(43, 33, 21, 0.35);
-  transition: transform 140ms ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .layer-switch.is-on {
@@ -412,8 +451,8 @@
   color: var(--color-ink-soft);
   white-space: nowrap;
   transition:
-    background 140ms ease,
-    color 140ms ease;
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 
 .segmented-option:hover {
@@ -463,9 +502,9 @@
   box-shadow: var(--shadow-chip);
   color: var(--color-ink-soft);
   transition:
-    transform 120ms ease,
-    box-shadow 120ms ease,
-    color 120ms ease;
+    transform var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 
 .select-chip:hover {
@@ -534,6 +573,7 @@
   justify-content: center;
   align-items: flex-start;
   padding: max(10vh, var(--space-5)) var(--space-4) var(--space-4);
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
 .search-dialog {
@@ -547,6 +587,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  animation: dialog-in var(--dur-slow) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .search-backdrop,
+  .search-dialog {
+    animation: none;
+  }
 }
 
 /* The dialog's mode tabs span the full width so three options read as one
@@ -636,7 +684,7 @@
   color: var(--color-sun-700);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-pill);
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .search-locate:hover {
@@ -666,7 +714,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .search-result:hover {
@@ -697,6 +745,7 @@
     rgba(255, 253, 247, 0.55)
   );
   backdrop-filter: blur(4px);
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
 .welcome-card {
@@ -710,6 +759,14 @@
   align-items: center;
   text-align: center;
   gap: var(--space-3);
+  animation: dialog-in var(--dur-slow) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-overlay,
+  .welcome-card {
+    animation: none;
+  }
 }
 
 .welcome-mark {
@@ -810,7 +867,7 @@
   font-weight: 600;
   display: flex;
   flex-direction: column;
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .comfort-option:hover {
@@ -902,7 +959,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-ink);
-  transition: border-color 120ms ease;
+  transition: border-color var(--dur-fast) var(--ease-standard);
   flex-grow: 1;
   width: 100%;
   min-width: 0;
@@ -944,11 +1001,20 @@
   background: var(--color-surface);
 }
 
+/* Expands in place of the trigger chip (currency + passport pickers), opening
+   downward inside the settings popover - default -6px rise. */
 .currency-picker {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
+  animation: popover-in var(--dur-base) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .currency-picker {
+    animation: none;
+  }
 }
 
 .currency-picker-bar {
@@ -1000,7 +1066,7 @@
   font-size: var(--text-sm);
   font-weight: 600;
   color: var(--color-ink);
-  transition: background 120ms ease;
+  transition: background var(--dur-fast) var(--ease-standard);
 }
 
 .currency-option:hover {
@@ -1097,8 +1163,10 @@
   justify-content: center;
   align-items: flex-start;
   padding: max(8vh, var(--space-5)) var(--space-4) var(--space-4);
+  animation: fade-in var(--dur-base) var(--ease-out);
 }
 
+/* Shared shell for ScoreInfoSheet and BannedCountriesSheet. */
 .score-info-sheet {
   width: min(520px, 100%);
   max-height: 84vh;
@@ -1110,6 +1178,14 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
+  animation: dialog-in var(--dur-slow) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .score-info-backdrop,
+  .score-info-sheet {
+    animation: none;
+  }
 }
 
 .score-info-head {
@@ -1136,8 +1212,8 @@
   border-radius: var(--radius-pill);
   color: var(--color-ink-soft);
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 
 .score-info-close:hover {
@@ -1313,8 +1389,8 @@
   border-radius: var(--radius-pill);
   color: var(--color-ink-soft);
   transition:
-    background 120ms ease,
-    color 120ms ease;
+    background var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 
 .banned-row-remove:hover {
@@ -1413,10 +1489,10 @@
   font-size: var(--text-sm);
   line-height: 1;
   transition:
-    transform 120ms ease,
-    border-color 120ms ease,
-    background 120ms ease,
-    box-shadow 120ms ease;
+    transform var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard),
+    background var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .suggest-chip:hover {
@@ -1434,6 +1510,7 @@
 
 .suggest-chip:active {
   transform: translateY(0);
+  transition-duration: var(--dur-instant);
 }
 
 .suggest-chip-flag {

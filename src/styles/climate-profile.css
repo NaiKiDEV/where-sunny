@@ -32,7 +32,7 @@
 
 .climate-chevron {
   margin-left: auto;
-  transition: transform 160ms ease;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
 .climate-chevron-open {
@@ -42,6 +42,12 @@
 .climate-note {
   font-size: var(--text-sm);
   color: var(--color-ink-faint);
+}
+
+/* The 12-month chart rises in when it arrives (the archive fetch fires only on
+   expand); collapse is an instant unmount, so there is no exit animation. */
+.climate-body {
+  animation: reveal-rise var(--dur-base) var(--ease-out);
 }
 
 /* 12 tiny month columns: tmax label, sunshine bar, rain dots, month letter. */
@@ -138,6 +144,16 @@
   margin-top: var(--space-1);
   font-size: var(--text-sm);
   color: var(--color-ink-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .climate-body {
+    animation: none;
+  }
+
+  .climate-chevron {
+    transition: none;
+  }
 }
 
 /* ============ forecast anomaly one-liner ============ */

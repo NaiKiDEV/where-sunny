@@ -102,7 +102,7 @@ export function ClimateProfile({ coords }: ClimateProfileProps) {
       {expanded && isError && <p className="climate-note">Couldn&rsquo;t load climate history.</p>}
 
       {expanded && normals && (
-        <div>
+        <div className="climate-body">
           <div className="climate-chart" role="img" aria-label={chartLabel(normals, unit)}>
             {normals.monthly.map((m) => (
               <MonthColumn key={m.month} normal={m} unit={unit} isCurrent={m.month === currentMonth} />

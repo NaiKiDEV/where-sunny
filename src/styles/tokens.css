@@ -46,4 +46,19 @@
   --panel-width: 400px;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --safe-top: env(safe-area-inset-top, 0px);
+
+  /* motion - see docs/ANIMATION-LANGUAGE.md. Durations split into "micro"
+     (feedback the user should not perceive as animation) and "spatial" (things
+     entering or moving). Every transition/animation in the app references these. */
+  --dur-instant: 90ms; /* press/active feedback, tiny state flips */
+  --dur-fast: 140ms; /* hover, color/border shifts, switch knob, chevron */
+  --dur-base: 220ms; /* popovers, menus, chip/section reveals, view swaps */
+  --dur-slow: 320ms; /* dialogs, drawer content group-entrance, overlays */
+
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1); /* symmetric moves, hover */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1); /* entrances - decelerate into place */
+  --ease-in: cubic-bezier(0.4, 0, 1, 1); /* the rare exit */
+
+  --reveal-rise: 8px; /* translateY start for content entrances */
+  --reveal-stagger: 40ms; /* per-child delay in a staggered group (capped) */
 }

@@ -18,6 +18,7 @@ import './styles/snow-note.css';
 import './styles/stay-links.css';
 import App from './app/App';
 import { AppProviders } from './app/providers';
+import { registerServiceWorker } from './lib/pwa';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -26,3 +27,5 @@ createRoot(document.getElementById('root')!).render(
     </AppProviders>
   </StrictMode>,
 );
+
+registerServiceWorker();
